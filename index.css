@@ -1,0 +1,65 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;700&display=swap');
+
+:root {
+  --player-x: 50%;
+  --player-y: 50%;
+  --radius: 35%;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-black text-white antialiased;
+}
+
+.font-fancy {
+  font-family: 'Cinzel', serif;
+}
+
+/* Dynamic Lighting Engine using CSS Masking */
+.dynamic-light-mask {
+  mask-image: radial-gradient(circle at var(--player-x) var(--player-y), rgba(0,0,0,1) 0%, rgba(0,0,0,0) var(--radius));
+  -webkit-mask-image: radial-gradient(circle at var(--player-x) var(--player-y), rgba(0,0,0,1) 0%, rgba(0,0,0,0) var(--radius));
+  transition: -webkit-mask-image 0.3s ease-out, mask-image 0.3s ease-out;
+}
+
+/* Custom Game Animations */
+@keyframes flicker {
+  0%, 100% { opacity: 0.9; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes rain {
+  0% { transform: translateY(-20px); }
+  100% { transform: translateY(20px); }
+}
+
+.animate-flicker {
+  animation: flicker 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-rain {
+  animation: rain 0.5s linear infinite;
+}
+
+.animate-pulse-fast {
+  animation: pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Hide scrollbars for cleaner UI */
+::-webkit-scrollbar {
+  display: none;
+}

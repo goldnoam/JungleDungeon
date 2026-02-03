@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   Position, TileType, Enemy, EnemyType, Gender, Theme, Weather, GameState, HighScoreEntry, Projectile 
@@ -23,21 +22,21 @@ const StoryOverlay: React.FC<{
   onClose: () => void;
 }> = ({ type, text, onClose }) => {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in duration-500">
-      <div className="max-w-xl w-full text-center space-y-8 p-10 border-2 border-emerald-900/50 rounded-3xl bg-emerald-950/20 relative overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in zoom-in duration-300">
+      <div className="max-w-xl w-full text-center space-y-8 p-10 border-2 border-emerald-900/50 rounded-3xl bg-emerald-950/20 relative overflow-hidden shadow-2xl">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-30" />
         
         {type === 'INTRO' && (
           <>
-            <h1 className="text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">The Jungle Depths</h1>
-            <div className="space-y-4 text-xl text-emerald-100/80 leading-relaxed font-light italic">
+            <h1 className="text-5xl md:text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">The Jungle Depths</h1>
+            <div className="space-y-4 text-lg md:text-xl text-emerald-100/80 leading-relaxed font-light italic">
               <p>For centuries, the <span className="text-amber-400 font-bold">Zoltan Gold</span> lay dormant beneath the ancient foliage.</p>
               <p>You have been chosen to retrieve the relics. But you are not alone...</p>
               <p className="text-red-400 font-bold mt-4 uppercase tracking-widest text-sm">Beware the Predators. Use your Spirit Fire.</p>
             </div>
             <button 
               onClick={onClose}
-              className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-110 shadow-[0_0_30px_rgba(5,150,105,0.4)] uppercase"
+              className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-[0_0_30px_rgba(5,150,105,0.4)] uppercase"
             >
               Enter the Abyss
             </button>
@@ -46,7 +45,7 @@ const StoryOverlay: React.FC<{
 
         {type === 'ENDGAME' && (
           <>
-            <h1 className="text-6xl font-black font-fancy text-yellow-400 animate-pulse uppercase">Immortal Victory</h1>
+            <h1 className="text-5xl md:text-6xl font-black font-fancy text-yellow-400 animate-pulse uppercase">Immortal Victory</h1>
             <div className="space-y-4 text-xl text-yellow-100/80 italic">
               <p>The deep jungle falls silent as you emerge with the <span className="text-amber-400 font-bold">Great Relic</span>.</p>
               <p>History will remember your name as the one who solved the shifting mazes.</p>
@@ -61,10 +60,10 @@ const StoryOverlay: React.FC<{
         )}
 
         {type === 'LORE' && (
-          <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl transform -rotate-1 font-serif">
+          <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl transform -rotate-1 font-serif animate-flicker">
             <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">Ancient Inscription</h3>
             <p className="text-2xl italic leading-relaxed">"{text}"</p>
-            <button onClick={onClose} className="mt-8 px-6 py-2 bg-amber-800 text-white font-bold rounded hover:bg-amber-900 transition-colors">Close Parchment</button>
+            <button onClick={onClose} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 transition-colors shadow-lg">Close Parchment</button>
           </div>
         )}
       </div>
@@ -106,19 +105,19 @@ export default function App() {
   const projTimerRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  // --- Dynamic Lighting Engine ---
+  // --- Dynamic Lighting Engine Update ---
   useEffect(() => {
     if (!viewportRef.current) return;
-    const tileWidth = 40; // Approx tile size in px
+    const tileWidth = 40; 
     const x = (playerPos.x * tileWidth) + (tileWidth / 2);
     const y = (playerPos.y * tileWidth) + (tileWidth / 2);
     viewportRef.current.style.setProperty('--player-x', `${x}px`);
     viewportRef.current.style.setProperty('--player-y', `${y}px`);
     
-    let radius = '35%';
-    if (theme === Theme.BRIGHT) radius = '1000%';
-    if (isPowerupActive) radius = '70%';
-    if (isDay) radius = '100%';
+    let radius = '120px';
+    if (theme === Theme.BRIGHT) radius = '3000px';
+    if (isPowerupActive) radius = '250px';
+    if (isDay) radius = '500px';
     viewportRef.current.style.setProperty('--radius', radius);
   }, [playerPos, theme, isPowerupActive, isDay]);
 
@@ -126,7 +125,6 @@ export default function App() {
     const newMaze = generateMaze(GRID_SIZE);
     let coins = 0;
     
-    // Enrich maze with specialized items
     for (let i = 0; i < GRID_SIZE; i++) {
       for (let j = 0; j < GRID_SIZE; j++) {
         if (newMaze[i][j] === TileType.PATH && Math.random() < 0.1) {
@@ -214,7 +212,7 @@ export default function App() {
         setIsPowerupActive(true);
         setTimeout(() => setIsPowerupActive(false), POWERUP_DURATION);
       } else if (maze[ny][nx] === TileType.TREASURE) {
-        if (gameState.level >= 5) {
+        if (gameState.level >= 10) {
            setGameState(s => ({ ...s, storyStep: 'ENDGAME', victory: true }));
         } else {
            setGameState(s => ({ ...s, victory: true }));
@@ -342,21 +340,25 @@ export default function App() {
 
       {/* Header */}
       <header className="p-4 bg-black/60 backdrop-blur-md flex justify-between items-center border-b border-emerald-900/30 z-50">
-        <div className="flex gap-8">
+        <div className="flex gap-4 md:gap-8">
           <div className="text-center">
              <p className="text-[10px] text-emerald-500 uppercase font-bold tracking-widest">Floor</p>
-             <p className="text-2xl font-black font-fancy">{gameState.level}</p>
+             <p className="text-xl md:text-2xl font-black font-fancy">{gameState.level}</p>
           </div>
           <div className="text-center">
              <p className="text-[10px] text-amber-500 uppercase font-bold tracking-widest">Wealth</p>
-             <p className="text-2xl font-black font-fancy text-amber-400">{gameState.score}</p>
+             <p className="text-xl md:text-2xl font-black font-fancy text-amber-400">{gameState.score}</p>
+          </div>
+          <div className="text-center">
+             <p className="text-[10px] text-blue-500 uppercase font-bold tracking-widest">Time</p>
+             <p className={`text-xl md:text-2xl font-black font-fancy ${gameState.timeRemaining < 10 ? 'text-red-500 animate-pulse' : ''}`}>{gameState.timeRemaining}s</p>
           </div>
         </div>
         
         <div className="flex gap-2">
-           <button onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : Theme.DARK)} className="p-2 bg-white/5 rounded-lg border border-white/10">{theme === Theme.DARK ? '🕯️' : '☀️'}</button>
-           <button onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} className="p-2 bg-white/5 rounded-lg border border-white/10">{gender === Gender.BOY ? '👦' : '👧'}</button>
-           <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="px-4 py-2 bg-emerald-700 rounded-lg font-bold uppercase text-xs">Menu</button>
+           <button onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : Theme.DARK)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors" title="Toggle Lighting Mode">{theme === Theme.DARK ? '🕯️' : '☀️'}</button>
+           <button onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors" title="Toggle Character">{gender === Gender.BOY ? '👦' : '👧'}</button>
+           <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 rounded-lg font-bold uppercase text-xs transition-all active:scale-90 shadow-md">Menu</button>
         </div>
       </header>
 
@@ -366,7 +368,7 @@ export default function App() {
         {/* Dynamic Light Viewport */}
         <div 
           ref={viewportRef}
-          className="relative rounded-2xl border-4 border-emerald-900 shadow-[0_0_100px_rgba(6,78,59,0.3)] overflow-hidden"
+          className="relative rounded-2xl border-4 border-emerald-900 shadow-[0_0_100px_rgba(6,78,59,0.3)] bg-black overflow-hidden"
           style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px` }}
         >
            {/* Environmental Overlays */}
@@ -391,7 +393,7 @@ export default function App() {
                   {tile === TileType.POWERUP && <span className="animate-pulse-fast">⚡</span>}
                   {tile === TileType.SCROLL && <span className="animate-bounce">📜</span>}
                   {tile === TileType.TREASURE && <span className="drop-shadow-[0_0_10px_gold]">💎</span>}
-                  {tile === TileType.WALL && <span className="opacity-40">🌳</span>}
+                  {tile === TileType.WALL && <span className="opacity-40 grayscale">🌳</span>}
                   
                   {/* Entities */}
                   {playerPos.x === x && playerPos.y === y && (
@@ -415,48 +417,78 @@ export default function App() {
            </div>
         </div>
 
-        {/* Mobile Controls */}
+        {/* Improved Mobile Controls with WASD labels */}
         <div className="md:hidden mt-8 flex gap-10 items-center">
            <div className="grid grid-cols-3 gap-2">
-              <div /> <button onClick={() => movePlayer(0,-1)} className="w-14 h-14 bg-emerald-800 rounded-full font-bold text-xl">W</button> <div />
-              <button onClick={() => movePlayer(-1,0)} className="w-14 h-14 bg-emerald-800 rounded-full font-bold text-xl">A</button>
-              <button onClick={() => movePlayer(0,1)} className="w-14 h-14 bg-emerald-800 rounded-full font-bold text-xl">S</button>
-              <button onClick={() => movePlayer(1,0)} className="w-14 h-14 bg-emerald-800 rounded-full font-bold text-xl">D</button>
+              <div /> 
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(0,-1); }} 
+                onClick={() => movePlayer(0,-1)} 
+                className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl shadow-lg active:bg-emerald-600 active:scale-90 flex items-center justify-center transition-all"
+              >
+                W
+              </button> 
+              <div />
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(-1,0); }} 
+                onClick={() => movePlayer(-1,0)} 
+                className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl shadow-lg active:bg-emerald-600 active:scale-90 flex items-center justify-center transition-all"
+              >
+                A
+              </button>
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(0,1); }} 
+                onClick={() => movePlayer(0,1)} 
+                className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl shadow-lg active:bg-emerald-600 active:scale-90 flex items-center justify-center transition-all"
+              >
+                S
+              </button>
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(1,0); }} 
+                onClick={() => movePlayer(1,0)} 
+                className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl shadow-lg active:bg-emerald-600 active:scale-90 flex items-center justify-center transition-all"
+              >
+                D
+              </button>
            </div>
-           <button onClick={fireSpirit} className="w-24 h-24 bg-red-600 rounded-full border-4 border-red-900 shadow-xl flex flex-col items-center justify-center animate-pulse">
+           <button 
+            onTouchStart={(e) => { e.preventDefault(); fireSpirit(); }} 
+            onClick={fireSpirit} 
+            className="w-24 h-24 bg-red-600 rounded-full border-4 border-red-900 shadow-xl flex flex-col items-center justify-center animate-pulse active:scale-90 transition-all hover:bg-red-500"
+           >
               <span className="text-3xl">🔥</span>
-              <span className="text-[10px] font-black uppercase">Cast</span>
+              <span className="text-[10px] font-black uppercase text-white">Cast</span>
            </button>
         </div>
       </main>
 
       {/* UI Modals (Paused/GameOver) */}
       {(gameState.isPaused || gameState.gameOver || gameState.victory) && gameState.storyStep === 'PLAYING' && !gameState.activeLore && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
            {gameState.gameOver ? (
-             <div className="space-y-6">
-                <h2 className="text-6xl font-black text-red-600 font-fancy tracking-tighter">Fallen Explorer</h2>
+             <div className="space-y-6 animate-flicker">
+                <h2 className="text-6xl font-black text-red-600 font-fancy tracking-tighter uppercase">Fallen Explorer</h2>
                 <p className="text-xl text-gray-300">The jungle spirits have claimed your soul at level {gameState.level}.</p>
-                <button onClick={resetGame} className="px-10 py-4 bg-red-600 rounded-full font-black uppercase text-xl hover:scale-105 transition-transform">Resurrect</button>
+                <button onClick={resetGame} className="px-10 py-4 bg-red-600 rounded-full font-black uppercase text-xl hover:scale-105 transition-transform shadow-lg shadow-red-900/50">Resurrect</button>
              </div>
            ) : gameState.victory ? (
              <div className="space-y-6">
-                <h2 className="text-6xl font-black text-amber-500 font-fancy">Floor Cleared</h2>
+                <h2 className="text-6xl font-black text-amber-500 font-fancy uppercase drop-shadow-[0_0_15px_gold]">Floor Cleared</h2>
                 <p className="text-xl text-gray-300">Descending deeper into the Zoltan Dungeon...</p>
-                <button onClick={nextLevel} className="px-10 py-4 bg-amber-500 text-black rounded-full font-black uppercase text-xl">Descend ➡️</button>
+                <button onClick={nextLevel} className="px-10 py-4 bg-amber-500 text-black rounded-full font-black uppercase text-xl shadow-lg shadow-amber-500/30">Descend ➡️</button>
              </div>
            ) : (
              <div className="space-y-10 w-full max-w-sm">
-                <h2 className="text-5xl font-black font-fancy italic">Zoltan Menu</h2>
+                <h2 className="text-5xl font-black font-fancy italic uppercase tracking-widest text-emerald-400">Zoltan Menu</h2>
                 <div className="grid gap-4">
-                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-4 bg-emerald-600 rounded-xl font-bold uppercase text-lg">Continue Quest</button>
-                  <button onClick={resetGame} className="w-full py-4 bg-red-600/50 hover:bg-red-600 rounded-xl font-bold uppercase text-lg">Restart Adventure</button>
+                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-4 bg-emerald-600 rounded-xl font-bold uppercase text-lg shadow-lg hover:bg-emerald-500 transition-all">Continue Quest</button>
+                  <button onClick={resetGame} className="w-full py-4 bg-red-600/50 hover:bg-red-600 rounded-xl font-bold uppercase text-lg shadow-lg transition-all">Restart Adventure</button>
                 </div>
-                <div className="text-left bg-black/50 p-6 rounded-2xl border border-emerald-900/30">
-                  <h3 className="text-amber-500 font-bold mb-4 uppercase text-xs tracking-widest">Master Explorers</h3>
+                <div className="text-left bg-black/50 p-6 rounded-2xl border border-emerald-900/30 shadow-inner">
+                  <h3 className="text-amber-500 font-bold mb-4 uppercase text-xs tracking-widest border-b border-amber-500/20 pb-2">Master Explorers</h3>
                   {highScores.map((s, i) => (
-                    <div key={i} className="flex justify-between text-sm py-1 border-b border-white/5">
-                      <span>{s.name}</span> <span className="font-mono text-amber-400">{s.score}</span>
+                    <div key={i} className="flex justify-between text-sm py-2 border-b border-white/5 last:border-0">
+                      <span className="text-emerald-100/70">{s.name}</span> <span className="font-mono text-amber-400 font-bold">{s.score}</span>
                     </div>
                   ))}
                 </div>
@@ -466,13 +498,20 @@ export default function App() {
       )}
 
       {/* AdSense Placement / Footer */}
-      <div className="w-full bg-black/40 border-t border-emerald-900/20 p-2 text-center">
-         <div className="h-10 text-[9px] uppercase tracking-[0.5em] text-emerald-900/40 flex items-center justify-center">
-           Ad Space: Secure your own golden treasure today at zoltan-bank.com
+      <div className="w-full bg-black/90 border-t border-emerald-900/40 p-2 text-center mt-auto shadow-2xl">
+         <div className="h-20 max-w-4xl mx-auto bg-emerald-950/20 border border-emerald-900/30 text-[10px] uppercase tracking-[0.2em] text-emerald-900/50 flex items-center justify-center rounded-lg mb-2 overflow-hidden">
+           <div className="px-4">
+             <p className="mb-1 font-bold">ADVERTISEMENT</p>
+             <p className="text-[8px] opacity-40">Support the explorers of tomorrow - Secure your own golden treasure today at Zoltan-Bank.com</p>
+           </div>
          </div>
-         <footer className="mt-2 flex justify-between px-6 text-[10px] font-bold text-emerald-900/60 uppercase tracking-widest">
-            <p>(C) Noam Gold AI 2026</p>
-            <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400">goldnoamai@gmail.com</a>
+         <footer className="flex flex-col sm:flex-row justify-between px-6 py-2 text-[10px] font-bold text-emerald-900/60 uppercase tracking-widest border-t border-emerald-900/10">
+            <p className="mb-1 sm:mb-0">(C) Noam Gold AI 2026</p>
+            <div className="flex gap-4 items-center">
+              <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors">goldnoamai@gmail.com</a>
+              <span className="opacity-30">|</span>
+              <button className="hover:text-emerald-400 cursor-pointer">Send Feedback</button>
+            </div>
          </footer>
       </div>
     </div>
