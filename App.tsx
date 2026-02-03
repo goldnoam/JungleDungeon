@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Position, TileType, Enemy, EnemyType, Gender, Theme, Weather, GameState, HighScoreEntry, Projectile 
+  Position, TileType, Enemy, EnemyType, Gender, CharacterClass, Theme, Weather, GameState, HighScoreEntry, Projectile 
 } from './types';
 import { GRID_SIZE, INITIAL_TIME, THEMES, TILE_COLORS, POWERUP_DURATION } from './constants';
 import { generateMaze, getRandomPathPosition } from './utils/maze';
@@ -15,11 +14,23 @@ const LORE_POOL = [
   "Beware the level of ten, where the treasure is most protected."
 ];
 
+const getPlayerEmoji = (charClass: CharacterClass, gender: Gender) => {
+  if (charClass === CharacterClass.KNIGHT) return gender === Gender.BOY ? '🤺' : '🤺'; // Or 💂 / 💂‍♀️
+  if (charClass === CharacterClass.ROGUE) return '🥷';
+  if (charClass === CharacterClass.WIZARD) return gender === Gender.BOY ? '🧙‍♂️' : '🧙‍♀️';
+  return '👦';
+};
+
 const StoryOverlay: React.FC<{ 
   type: 'INTRO' | 'ENDGAME' | 'LORE'; 
   text?: string; 
-  onClose: () => void;
-}> = ({ type, text, onClose }) => {
+  onClose: (data?: { gender: Gender; charClass: CharacterClass }) => void;
+  currentGender?: Gender;
+  currentClass?: CharacterClass;
+}> = ({ type, text, onClose, currentGender, currentClass }) => {
+  const [selectedGender, setSelectedGender] = useState<Gender>(currentGender || Gender.BOY);
+  const [selectedClass, setSelectedClass] = useState<CharacterClass>(currentClass || CharacterClass.KNIGHT);
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in zoom-in duration-300">
       <div className="max-w-xl w-full text-center space-y-8 p-10 border-2 border-emerald-900/50 rounded-3xl bg-emerald-950/20 relative overflow-hidden shadow-2xl">
@@ -27,12 +38,53 @@ const StoryOverlay: React.FC<{
         {type === 'INTRO' && (
           <>
             <h1 className="text-5xl md:text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic">The Jungle Depths</h1>
-            <div className="space-y-4 text-lg md:text-xl text-emerald-100/80 leading-relaxed font-light italic">
-              <p>For centuries, the <span className="text-amber-400 font-bold">Zoltan Gold</span> lay dormant beneath the ancient foliage.</p>
-              <p>You have been chosen to retrieve the relics. But you are not alone...</p>
-              <p className="text-red-400 font-bold mt-4 uppercase tracking-widest text-sm">Beware the Predators. Use your Spirit Fire.</p>
+            
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">Choose Your Avatar</p>
+                <div className="flex justify-center gap-4">
+                  <button 
+                    onClick={() => setSelectedGender(Gender.BOY)} 
+                    className={`px-6 py-3 rounded-xl border-2 transition-all ${selectedGender === Gender.BOY ? 'bg-emerald-600 border-emerald-400 scale-110 shadow-lg' : 'bg-black/40 border-emerald-900/30'}`}
+                  >
+                    👦 Boy
+                  </button>
+                  <button 
+                    onClick={() => setSelectedGender(Gender.GIRL)} 
+                    className={`px-6 py-3 rounded-xl border-2 transition-all ${selectedGender === Gender.GIRL ? 'bg-emerald-600 border-emerald-400 scale-110 shadow-lg' : 'bg-black/40 border-emerald-900/30'}`}
+                  >
+                    👧 Girl
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">Choose Your Class</p>
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: CharacterClass.KNIGHT, label: 'Knight', icon: '🤺' },
+                    { id: CharacterClass.ROGUE, label: 'Rogue', icon: '🥷' },
+                    { id: CharacterClass.WIZARD, label: 'Wizard', icon: '🧙' },
+                  ].map((cls) => (
+                    <button 
+                      key={cls.id}
+                      onClick={() => setSelectedClass(cls.id)} 
+                      className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${selectedClass === cls.id ? 'bg-emerald-600 border-emerald-400 scale-105 shadow-xl' : 'bg-black/40 border-emerald-900/30 hover:bg-black/60'}`}
+                    >
+                      <span className="text-3xl mb-1">{cls.icon}</span>
+                      <span className="text-[10px] font-black uppercase tracking-tighter">{cls.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <button onClick={onClose} className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-lg uppercase">Enter the Abyss</button>
+
+            <button 
+              onClick={() => onClose({ gender: selectedGender, charClass: selectedClass })} 
+              className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-lg uppercase"
+            >
+              Enter the Abyss
+            </button>
           </>
         )}
         {type === 'ENDGAME' && (
@@ -41,14 +93,14 @@ const StoryOverlay: React.FC<{
             <div className="space-y-4 text-xl text-yellow-100/80 italic">
               <p>The deep jungle falls silent as you emerge with the <span className="text-amber-400 font-bold">Great Relic</span>.</p>
             </div>
-            <button onClick={onClose} className="px-12 py-5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-full text-2xl font-black transition-all uppercase">New Legend</button>
+            <button onClick={() => onClose()} className="px-12 py-5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-full text-2xl font-black transition-all uppercase">New Legend</button>
           </>
         )}
         {type === 'LORE' && (
           <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl font-serif">
             <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">Ancient Inscription</h3>
             <p className="text-2xl italic leading-relaxed">"{text}"</p>
-            <button onClick={onClose} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg transition-transform active:scale-95">Close Parchment</button>
+            <button onClick={() => onClose()} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg transition-transform active:scale-95">Close Parchment</button>
           </div>
         )}
       </div>
@@ -77,6 +129,7 @@ export default function App() {
   });
 
   const [gender, setGender] = useState<Gender>(Gender.BOY);
+  const [charClass, setCharClass] = useState<CharacterClass>(CharacterClass.KNIGHT);
   const [theme, setTheme] = useState<Theme>(Theme.DARK);
   const [weather, setWeather] = useState<Weather>(Weather.CLEAR);
   const [isDay, setIsDay] = useState(false);
@@ -238,7 +291,20 @@ export default function App() {
 
   return (
     <div className={`fixed inset-0 flex flex-col transition-all duration-700 select-none ${THEMES[theme]}`}>
-      {gameState.storyStep === 'INTRO' && <StoryOverlay type="INTRO" onClose={() => setGameState(s => ({ ...s, isPaused: false, storyStep: 'PLAYING' }))} />}
+      {gameState.storyStep === 'INTRO' && (
+        <StoryOverlay 
+          type="INTRO" 
+          currentGender={gender}
+          currentClass={charClass}
+          onClose={(data) => {
+            if (data) {
+              setGender(data.gender);
+              setCharClass(data.charClass);
+            }
+            setGameState(s => ({ ...s, isPaused: false, storyStep: 'PLAYING' }));
+          }} 
+        />
+      )}
       {gameState.activeLore && <StoryOverlay type="LORE" text={gameState.activeLore} onClose={() => setGameState(s => ({ ...s, activeLore: null, isPaused: false }))} />}
       {gameState.storyStep === 'ENDGAME' && gameState.victory && <StoryOverlay type="ENDGAME" onClose={resetGame} />}
 
@@ -264,13 +330,6 @@ export default function App() {
              title="Change Theme"
            >
              {theme === Theme.DARK ? '🕯️' : theme === Theme.BRIGHT ? '☀️' : '🌈'}
-           </button>
-           <button 
-             onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} 
-             className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90" 
-             title="Toggle Boy/Girl"
-           >
-             {gender === Gender.BOY ? '👦' : '👧'}
            </button>
            <button 
              onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} 
@@ -307,7 +366,7 @@ export default function App() {
                     
                     {playerPos.x === x && playerPos.y === y && (
                       <div className="z-30 text-3xl drop-shadow-2xl relative flex items-center justify-center">
-                        {gender === Gender.BOY ? '👦' : '👧'}
+                        {getPlayerEmoji(charClass, gender)}
                         <div className={`absolute inset-[-60%] ${isPowerupActive ? 'bg-amber-400' : 'bg-emerald-400/30'} blur-2xl animate-flicker rounded-full -z-10`} />
                         {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400">POWER</div>}
                       </div>
@@ -360,13 +419,11 @@ export default function App() {
         </div>
       </main>
 
-      {/* Persistent HUD / Controls */}
       <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-4 z-40">
          <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-emerald-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Pause Game">{gameState.isPaused ? '▶️' : '⏸️'}</button>
          <button onClick={resetGame} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-red-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Reset Current Floor">🔄</button>
       </div>
 
-      {/* Menus and States */}
       {(gameState.isPaused || gameState.gameOver || gameState.victory) && gameState.storyStep === 'PLAYING' && !gameState.activeLore && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
            {gameState.gameOver ? (
@@ -386,6 +443,12 @@ export default function App() {
                 <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400 tracking-tight">Abyssal Menu</h2>
                 <div className="grid gap-4">
                   <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">Continue Hunt</button>
+                  <button 
+                    onClick={() => setGameState(s => ({ ...s, storyStep: 'INTRO', isPaused: true }))} 
+                    className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95"
+                  >
+                    Change Character
+                  </button>
                   <button onClick={resetGame} className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95">New Expedition</button>
                 </div>
                 
@@ -413,7 +476,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Persistent Footer */}
       <footer className="w-full bg-black/95 border-t border-white/5 p-4 z-50">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
             <p className="hover:text-emerald-500 transition-colors duration-500">(C) NOAM GOLD AI 2026</p>

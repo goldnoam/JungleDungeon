@@ -1,4 +1,3 @@
-
 export type Position = {
   x: number;
   y: number;
@@ -22,6 +21,12 @@ export enum EnemyType {
 export enum Gender {
   BOY = 'BOY',
   GIRL = 'GIRL'
+}
+
+export enum CharacterClass {
+  KNIGHT = 'KNIGHT',
+  ROGUE = 'ROGUE',
+  WIZARD = 'WIZARD'
 }
 
 export enum Theme {
