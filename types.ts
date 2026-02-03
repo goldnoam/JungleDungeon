@@ -40,7 +40,6 @@ export interface Enemy {
   id: string;
   type: EnemyType;
   pos: Position;
-  direction: Position;
 }
 
 export interface Projectile {
@@ -59,7 +58,7 @@ export interface GameState {
   victory: boolean;
   coinsCollected: number;
   totalCoinsInLevel: number;
-  storyStep: number;
+  storyStep: 'INTRO' | 'PLAYING' | 'ENDGAME';
   activeLore: string | null;
 }
 

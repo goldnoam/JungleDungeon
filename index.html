@@ -5,20 +5,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jungle Dungeon Explorer | Gold & Glory</title>
-    <meta name="description" content="Explore the jungle dungeon, collect gold coins, and solve mazes in this addictive adventure game. Featuring day/night cycles and dynamic weather.">
-    <meta name="keywords" content="game, maze, dungeon, jungle, coins, adventure, retro">
-    <link rel="icon" href="https://picsum.photos/32/32?random=1">
+    <meta name="description" content="Navigate the dangerous jungle dungeon, solve mazes, and collect gold. Experience dynamic weather, day/night cycles, and ancient lore.">
+    <meta name="keywords" content="maze runner, jungle dungeon, gold collector, retro adventure, web game">
+    <meta property="og:title" content="Jungle Dungeon Explorer">
+    <meta property="og:description" content="Collect gold and survive the predators of the deep jungle.">
+    <meta property="og:image" content="https://picsum.photos/1200/630?random=maze">
+    <link rel="icon" href="https://api.iconify.design/game-icons:treasure-map.svg?color=%23fbbf24" type="image/svg+xml">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
             animation: {
-              'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-              'bounce-soft': 'bounce 2s infinite',
-              'rain': 'rain 0.5s linear infinite'
+              'flicker': 'flicker 2s infinite',
+              'float': 'float 3s ease-in-out infinite',
+              'rain': 'rain 0.5s linear infinite',
+              'pulse-fast': 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             },
             keyframes: {
+              flicker: {
+                '0%, 100%': { opacity: '0.9', transform: 'scale(1)' },
+                '50%': { opacity: '1', transform: 'scale(1.05)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-10px)' },
+              },
               rain: {
                 '0%': { transform: 'translateY(-20px)' },
                 '100%': { transform: 'translateY(20px)' }
@@ -31,14 +43,32 @@
 <script type="importmap">
 {
   "imports": {
-    "react/": "https://esm.sh/react@^19.2.4/",
-    "react": "https://esm.sh/react@^19.2.4",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Inter:wght@400;700&display=swap');
+  
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+  
+  .font-fancy {
+    font-family: 'Cinzel', serif;
+  }
+
+  .dynamic-light-mask {
+    mask-image: radial-gradient(circle at var(--player-x) var(--player-y), rgba(0,0,0,1) 0%, rgba(0,0,0,0) var(--radius));
+    -webkit-mask-image: radial-gradient(circle at var(--player-x) var(--player-y), rgba(0,0,0,1) 0%, rgba(0,0,0,0) var(--radius));
+  }
+</style>
 </head>
-<body class="bg-black text-white overflow-hidden m-0 p-0 font-sans">
+<body class="bg-black text-white overflow-hidden m-0 p-0">
     <div id="root"></div>
 </body>
 </html>
