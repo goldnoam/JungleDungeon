@@ -212,7 +212,11 @@ export default function App() {
       const nx = e.pos.x + move.x, ny = e.pos.y + move.y;
       return (nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE && maze[ny][nx] !== TileType.WALL) ? { ...e, pos: { x: nx, y: ny } } : e;
     })), 450);
-    projTimerRef.current = setInterval(() => setProjectiles(prev => prev.map(p => ({ ...p, pos: { x: p.pos.x + p.dir.x, y: p.pos.y + p.dir.y } })).filter(p => p.pos.x>=0 && p.pos.x<GRID_SIZE && p.pos.y>=0 && p.pos.y<GRID_SIZE && maze[Math.floor(p.pos.y)][Math.floor(p.pos.x)] !== TileType.WALL)), 80);
+    projTimerRef.current = setInterval(() => setProjectiles(prev => prev.map(p => ({ ...p, pos: { x: p.pos.x + p.dir.x, y: p.pos.y + p.dir.y } })).filter(p => {
+      const ix = Math.floor(p.pos.x);
+      const iy = Math.floor(p.pos.y);
+      return ix>=0 && ix<GRID_SIZE && iy>=0 && iy<GRID_SIZE && maze[iy][ix] !== TileType.WALL;
+    })), 80);
     return () => { clearInterval(gameTimerRef.current); clearInterval(enemyTimerRef.current); clearInterval(projTimerRef.current); };
   }, [gameState.isPaused, gameState.gameOver, gameState.victory, maze]);
 
