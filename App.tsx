@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { 
   Position, TileType, Enemy, EnemyType, Gender, Theme, Weather, GameState, HighScoreEntry, Projectile 
 } from './types';
-import { GRID_SIZE, INITIAL_TIME, TICK_RATE, THEMES, TILE_COLORS, POWERUP_DURATION } from './constants';
+import { GRID_SIZE, INITIAL_TIME, THEMES, TILE_COLORS, POWERUP_DURATION } from './constants';
 import { generateMaze, getRandomPathPosition } from './utils/maze';
 
 const LORE_POOL = [
@@ -114,6 +115,7 @@ export default function App() {
     viewportRef.current.style.setProperty('--player-x', `${x}px`);
     viewportRef.current.style.setProperty('--player-y', `${y}px`);
     
+    // Deeper shadows: radius defines the "lit" area
     let radius = '120px';
     if (theme === Theme.BRIGHT) radius = '3000px';
     if (isPowerupActive) radius = '250px';
@@ -372,7 +374,7 @@ export default function App() {
           style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px` }}
         >
            {/* Environmental Overlays */}
-           {!isDay && <div className="absolute inset-0 bg-indigo-950/40 mix-blend-multiply z-10 pointer-events-none" />}
+           {!isDay && <div className="absolute inset-0 bg-indigo-950/40 mix-blend-multiply z-10 pointer-events-none shadow-inner" />}
            {weather === Weather.RAIN && (
              <div className="absolute inset-0 z-20 pointer-events-none opacity-20">
                 {Array.from({length: 30}).map((_, i) => (
@@ -462,6 +464,16 @@ export default function App() {
         </div>
       </main>
 
+      {/* Persistent Pause/Reset Controls for improved Mobile UX */}
+      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-3 z-40 opacity-70 hover:opacity-100 transition-opacity">
+         <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/80 rounded-full border border-emerald-500/50 shadow-xl" title="Pause Game">
+            {gameState.isPaused ? '▶️' : '⏸️'}
+         </button>
+         <button onClick={resetGame} className="p-4 bg-black/80 rounded-full border border-red-500/50 shadow-xl" title="Reset Game">
+            🔄
+         </button>
+      </div>
+
       {/* UI Modals (Paused/GameOver) */}
       {(gameState.isPaused || gameState.gameOver || gameState.victory) && gameState.storyStep === 'PLAYING' && !gameState.activeLore && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-300">
@@ -506,7 +518,7 @@ export default function App() {
            </div>
          </div>
          <footer className="flex flex-col sm:flex-row justify-between px-6 py-2 text-[10px] font-bold text-emerald-900/60 uppercase tracking-widest border-t border-emerald-900/10">
-            <p className="mb-1 sm:mb-0">(C) Noam Gold AI 2026</p>
+            <p className="mb-1 sm:mb-0 text-emerald-900/40 tracking-widest">(C) NOAM GOLD AI 2026</p>
             <div className="flex gap-4 items-center">
               <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors">goldnoamai@gmail.com</a>
               <span className="opacity-30">|</span>
