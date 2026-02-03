@@ -25,24 +25,48 @@ const getPlayerEmoji = (charClass: CharacterClass, gender: Gender) => {
 const StoryOverlay: React.FC<{ 
   type: 'INTRO' | 'ENDGAME' | 'LORE'; 
   text?: string; 
-  onClose: (data?: { gender: Gender; charClass: CharacterClass }) => void;
+  onClose: (data?: { gender: Gender; charClass: CharacterClass; language: Language }) => void;
   currentGender?: Gender;
   currentClass?: CharacterClass;
   lang: Language;
-}> = ({ type, text, onClose, currentGender, currentClass, lang }) => {
+  onLanguageChange?: (lang: Language) => void;
+}> = ({ type, text, onClose, currentGender, currentClass, lang, onLanguageChange }) => {
   const [selectedGender, setSelectedGender] = useState<Gender>(currentGender || Gender.BOY);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(currentClass || CharacterClass.KNIGHT);
   const t = (key: string) => TRANSLATIONS[lang][key] || key;
 
+  const getClassLabel = (cls: CharacterClass) => {
+    const genderSuffix = selectedGender === Gender.BOY ? 'boy' : 'girl';
+    const key = `${cls.toLowerCase()}_${genderSuffix}`;
+    return t(key);
+  };
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in zoom-in duration-300">
-      <div className="max-w-xl w-full text-center space-y-8 p-10 border-2 border-emerald-900/50 rounded-3xl bg-emerald-950/20 relative overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in zoom-in duration-300 overflow-y-auto">
+      <div className="max-w-xl w-full text-center space-y-8 p-10 border-2 border-emerald-900/50 rounded-3xl bg-emerald-950/20 relative overflow-hidden shadow-2xl my-auto">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-30" />
+        
         {type === 'INTRO' && (
           <>
             <h1 className="text-5xl md:text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic">{t('title')}</h1>
             
             <div className="space-y-6">
+              {/* Language Selector Only on Main Screen */}
+              <div>
+                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">{t('chooseLang')}</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {Object.values(Language).map((l) => (
+                    <button
+                      key={l}
+                      onClick={() => onLanguageChange?.(l)}
+                      className={`px-3 py-1.5 rounded-full text-[10px] font-black border transition-all ${lang === l ? 'bg-emerald-600 border-emerald-400 text-white shadow-lg scale-105' : 'bg-black/40 border-emerald-900/30 text-emerald-100/40 hover:text-white'}`}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div>
                 <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">{t('chooseAvatar')}</p>
                 <div className="flex justify-center gap-4">
@@ -65,9 +89,9 @@ const StoryOverlay: React.FC<{
                 <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">{t('chooseClass')}</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { id: CharacterClass.KNIGHT, label: t('knight'), icon: '🤺' },
-                    { id: CharacterClass.ROGUE, label: t('rogue'), icon: '🥷' },
-                    { id: CharacterClass.WIZARD, label: t('wizard'), icon: '🧙' },
+                    { id: CharacterClass.KNIGHT, icon: '🤺' },
+                    { id: CharacterClass.ROGUE, icon: '🥷' },
+                    { id: CharacterClass.WIZARD, icon: '🧙' },
                   ].map((cls) => (
                     <button 
                       key={cls.id}
@@ -75,7 +99,9 @@ const StoryOverlay: React.FC<{
                       className={`flex flex-col items-center p-4 rounded-2xl border-2 transition-all ${selectedClass === cls.id ? 'bg-emerald-600 border-emerald-400 scale-105 shadow-xl' : 'bg-black/40 border-emerald-900/30 hover:bg-black/60'}`}
                     >
                       <span className="text-3xl mb-1">{cls.icon}</span>
-                      <span className="text-[10px] font-black uppercase tracking-tighter">{cls.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-tighter whitespace-nowrap overflow-hidden text-ellipsis w-full">
+                        {getClassLabel(cls.id)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -83,13 +109,14 @@ const StoryOverlay: React.FC<{
             </div>
 
             <button 
-              onClick={() => onClose({ gender: selectedGender, charClass: selectedClass })} 
-              className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-lg uppercase"
+              onClick={() => onClose({ gender: selectedGender, charClass: selectedClass, language: lang })} 
+              className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-lg uppercase w-full"
             >
               {t('enterAbyss')}
             </button>
           </>
         )}
+        
         {type === 'ENDGAME' && (
           <>
             <h1 className="text-5xl md:text-6xl font-black font-fancy text-yellow-400 animate-pulse uppercase">{t('immortalVictory')}</h1>
@@ -99,6 +126,7 @@ const StoryOverlay: React.FC<{
             <button onClick={() => onClose()} className="px-12 py-5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-full text-2xl font-black transition-all uppercase">{t('newLegend')}</button>
           </>
         )}
+        
         {type === 'LORE' && (
           <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl font-serif">
             <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">{t('ancientInscription')}</h3>
@@ -306,12 +334,15 @@ export default function App() {
           currentGender={gender}
           currentClass={charClass}
           lang={gameState.language}
+          onLanguageChange={(l) => setGameState(s => ({ ...s, language: l }))}
           onClose={(data) => {
             if (data) {
               setGender(data.gender);
               setCharClass(data.charClass);
+              setGameState(s => ({ ...s, language: data.language, isPaused: false, storyStep: 'PLAYING' }));
+            } else {
+              setGameState(s => ({ ...s, isPaused: false, storyStep: 'PLAYING' }));
             }
-            setGameState(s => ({ ...s, isPaused: false, storyStep: 'PLAYING' }));
           }} 
         />
       )}
@@ -334,19 +365,6 @@ export default function App() {
           </div>
         </div>
         <div className="flex gap-2">
-           <select 
-             value={gameState.language}
-             onChange={(e) => setGameState(s => ({ ...s, language: e.target.value as Language }))}
-             className="bg-white/5 border border-white/10 rounded-full px-3 text-xs font-black uppercase tracking-tighter text-white hover:bg-white/20 transition-all cursor-pointer outline-none"
-           >
-             <option value={Language.EN} className="bg-slate-900">EN</option>
-             <option value={Language.HE} className="bg-slate-900">עברית</option>
-             <option value={Language.ZH} className="bg-slate-900">中文</option>
-             <option value={Language.HI} className="bg-slate-900">हिन्दी</option>
-             <option value={Language.DE} className="bg-slate-900">DE</option>
-             <option value={Language.ES} className="bg-slate-900">ES</option>
-             <option value={Language.FR} className="bg-slate-900">FR</option>
-           </select>
            <button 
              onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : t === Theme.BRIGHT ? Theme.COLORFUL : Theme.DARK)} 
              className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90" 
