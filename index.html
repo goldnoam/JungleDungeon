@@ -18,17 +18,10 @@
 
     <!-- Favicon -->
     <link rel="icon" href="https://api.iconify.design/game-icons:treasure-map.svg?color=%23fbbf24" type="image/svg+xml">
-    
-    <!-- Standard CSS (Compiled via PostCSS/Tailwind) -->
-    <link rel="stylesheet" href="index.css">
-
-    <!-- Import Map (Only browser-runtime libraries) -->
-    <script type="importmap">
+<script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "react": "https://esm.sh/react@^19.2.4",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "vite": "https://esm.sh/vite@^7.3.1",
@@ -39,5 +32,7 @@
 </head>
 <body class="bg-black text-white overflow-hidden m-0 p-0 selection:bg-emerald-500 selection:text-white">
     <div id="root"></div>
+    <!-- Entry point for Vite build -->
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>
