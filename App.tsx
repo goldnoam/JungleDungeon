@@ -47,7 +47,7 @@ const StoryOverlay: React.FC<{
           <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl font-serif">
             <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">Ancient Inscription</h3>
             <p className="text-2xl italic leading-relaxed">"{text}"</p>
-            <button onClick={onClose} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg">Close Parchment</button>
+            <button onClick={onClose} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg transition-transform active:scale-95">Close Parchment</button>
           </div>
         )}
       </div>
@@ -93,13 +93,14 @@ export default function App() {
     hasSavedScoreRef.current = false;
     for (let i = 0; i < GRID_SIZE; i++) {
       for (let j = 0; j < GRID_SIZE; j++) {
-        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.1) newMaze[i][j] = TileType.COIN;
-        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.02) newMaze[i][j] = TileType.POWERUP;
-        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.01) newMaze[i][j] = TileType.SCROLL;
+        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.12) newMaze[i][j] = TileType.COIN;
+        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.03) newMaze[i][j] = TileType.POWERUP;
+        if (newMaze[i][j] === TileType.PATH && Math.random() < 0.015) newMaze[i][j] = TileType.SCROLL;
       }
     }
     const newEnemies: Enemy[] = [];
-    for (let i = 0; i < Math.min(levelNum + 2, 12); i++) {
+    const enemyCount = Math.min(levelNum + 2, 15);
+    for (let i = 0; i < enemyCount; i++) {
       const pos = getRandomPathPosition(newMaze, { x: 1, y: 1 });
       newEnemies.push({ id: Math.random().toString(), type: [EnemyType.SNAKE, EnemyType.OWL, EnemyType.BAT][Math.floor(Math.random() * 3)], pos });
     }
@@ -111,14 +112,14 @@ export default function App() {
       ...prev,
       level: levelNum,
       score: currentScore,
-      timeRemaining: INITIAL_TIME + (levelNum * 5),
+      timeRemaining: INITIAL_TIME + (levelNum * 4),
       isPaused: levelNum === 1,
       gameOver: false,
       victory: false,
       storyStep: levelNum === 1 ? 'INTRO' : 'PLAYING'
     }));
     setWeather([Weather.CLEAR, Weather.RAIN, Weather.MIST][Math.floor(Math.random() * 3)]);
-    setIsDay(Math.random() > 0.6);
+    setIsDay(Math.random() > 0.7);
   }, []);
 
   useEffect(() => {
@@ -127,7 +128,6 @@ export default function App() {
     if (stored) setHighScores(JSON.parse(stored));
   }, [initLevel]);
 
-  // Highscore Persistence
   useEffect(() => {
     if ((gameState.gameOver || (gameState.victory && gameState.storyStep === 'ENDGAME')) && !hasSavedScoreRef.current) {
       hasSavedScoreRef.current = true;
@@ -152,14 +152,14 @@ export default function App() {
     let radius = '120px';
     if (theme === Theme.BRIGHT) radius = '3000px';
     else if (isPowerupActive) radius = '250px';
-    else if (isDay) radius = '500px';
+    else if (isDay) radius = '450px';
     viewportRef.current.style.setProperty('--radius', radius);
   }, [playerPos, theme, isPowerupActive, isDay]);
 
   const fireSpirit = useCallback(() => {
     if (gameState.isPaused || gameState.gameOver || gameState.victory) return;
     setProjectiles(prev => [...prev, { id: Math.random().toString(), pos: { ...playerPos }, dir: { ...playerFacing } }]);
-  }, [playerPos, playerFacing, gameState]);
+  }, [playerPos, playerFacing, gameState.isPaused, gameState.gameOver, gameState.victory]);
 
   const movePlayer = useCallback((dx: number, dy: number) => {
     if (gameState.gameOver || gameState.victory || gameState.isPaused) return;
@@ -171,8 +171,8 @@ export default function App() {
       const newMaze = [...maze];
       let scoreAdd = 0;
       let loreAdd = null;
-      if (maze[ny][nx] === TileType.COIN) { newMaze[ny][nx] = TileType.PATH; scoreAdd = 15; }
-      else if (maze[ny][nx] === TileType.SCROLL) { newMaze[ny][nx] = TileType.PATH; loreAdd = LORE_POOL[Math.floor(Math.random() * LORE_POOL.length)]; scoreAdd = 50; }
+      if (maze[ny][nx] === TileType.COIN) { newMaze[ny][nx] = TileType.PATH; scoreAdd = 20; }
+      else if (maze[ny][nx] === TileType.SCROLL) { newMaze[ny][nx] = TileType.PATH; loreAdd = LORE_POOL[Math.floor(Math.random() * LORE_POOL.length)]; scoreAdd = 75; }
       else if (maze[ny][nx] === TileType.POWERUP) { newMaze[ny][nx] = TileType.PATH; setIsPowerupActive(true); setTimeout(() => setIsPowerupActive(false), POWERUP_DURATION); }
       else if (maze[ny][nx] === TileType.TREASURE) { 
         if (gameState.level >= 10) setGameState(s => ({ ...s, storyStep: 'ENDGAME', victory: true }));
@@ -182,7 +182,7 @@ export default function App() {
       setGameState(s => ({ ...s, score: s.score + scoreAdd, activeLore: loreAdd || s.activeLore, isPaused: loreAdd ? true : s.isPaused }));
       return { x: nx, y: ny };
     });
-  }, [maze, gameState]);
+  }, [maze, gameState.gameOver, gameState.victory, gameState.isPaused, gameState.level]);
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -190,18 +190,19 @@ export default function App() {
         if (['Enter', 'Escape', ' '].includes(e.key)) setGameState(s => ({ ...s, activeLore: null, isPaused: false }));
         return;
       }
-      switch (e.key) {
-        case 'ArrowUp': case 'w': movePlayer(0, -1); break;
-        case 'ArrowDown': case 's': movePlayer(0, 1); break;
-        case 'ArrowLeft': case 'a': movePlayer(-1, 0); break;
-        case 'ArrowRight': case 'd': movePlayer(1, 0); break;
+      switch (e.key.toLowerCase()) {
+        case 'arrowup': case 'w': movePlayer(0, -1); break;
+        case 'arrowdown': case 's': movePlayer(0, 1); break;
+        case 'arrowleft': case 'a': movePlayer(-1, 0); break;
+        case 'arrowright': case 'd': movePlayer(1, 0); break;
         case ' ': fireSpirit(); break;
         case 'p': setGameState(s => ({ ...s, isPaused: !s.isPaused })); break;
+        case 'r': resetGame(); break;
       }
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [movePlayer, fireSpirit, gameState.activeLore]);
+  }, [movePlayer, fireSpirit, gameState.activeLore, gameState.isPaused]);
 
   useEffect(() => {
     if (gameState.isPaused || gameState.gameOver || gameState.victory) return;
@@ -211,14 +212,14 @@ export default function App() {
       const nx = e.pos.x + move.x, ny = e.pos.y + move.y;
       return (nx>=0 && nx<GRID_SIZE && ny>=0 && ny<GRID_SIZE && maze[ny][nx] !== TileType.WALL) ? { ...e, pos: { x: nx, y: ny } } : e;
     })), 450);
-    projTimerRef.current = setInterval(() => setProjectiles(prev => prev.map(p => ({ ...p, pos: { x: p.pos.x + p.dir.x, y: p.pos.y + p.dir.y } })).filter(p => p.pos.x>=0 && p.pos.x<GRID_SIZE && p.pos.y>=0 && p.pos.y<GRID_SIZE && maze[p.pos.y][p.pos.x] !== TileType.WALL)), 100);
+    projTimerRef.current = setInterval(() => setProjectiles(prev => prev.map(p => ({ ...p, pos: { x: p.pos.x + p.dir.x, y: p.pos.y + p.dir.y } })).filter(p => p.pos.x>=0 && p.pos.x<GRID_SIZE && p.pos.y>=0 && p.pos.y<GRID_SIZE && maze[Math.floor(p.pos.y)][Math.floor(p.pos.x)] !== TileType.WALL)), 80);
     return () => { clearInterval(gameTimerRef.current); clearInterval(enemyTimerRef.current); clearInterval(projTimerRef.current); };
   }, [gameState.isPaused, gameState.gameOver, gameState.victory, maze]);
 
   useEffect(() => {
     setEnemies(prev => {
       const survivors = prev.filter(e => !projectiles.some(p => Math.floor(p.pos.x) === e.pos.x && Math.floor(p.pos.y) === e.pos.y));
-      if (survivors.length < prev.length) setGameState(s => ({ ...s, score: s.score + 50 }));
+      if (survivors.length < prev.length) setGameState(s => ({ ...s, score: s.score + 100 }));
       return survivors;
     });
   }, [projectiles]);
@@ -231,89 +232,175 @@ export default function App() {
   const nextLevel = () => initLevel(gameState.level + 1, gameState.score);
 
   return (
-    <div className={`fixed inset-0 flex flex-col transition-all duration-700 ${THEMES[theme]}`}>
+    <div className={`fixed inset-0 flex flex-col transition-all duration-700 select-none ${THEMES[theme]}`}>
       {gameState.storyStep === 'INTRO' && <StoryOverlay type="INTRO" onClose={() => setGameState(s => ({ ...s, isPaused: false, storyStep: 'PLAYING' }))} />}
       {gameState.activeLore && <StoryOverlay type="LORE" text={gameState.activeLore} onClose={() => setGameState(s => ({ ...s, activeLore: null, isPaused: false }))} />}
       {gameState.storyStep === 'ENDGAME' && gameState.victory && <StoryOverlay type="ENDGAME" onClose={resetGame} />}
 
-      <header className="p-4 bg-black/60 backdrop-blur-md flex justify-between items-center border-b border-emerald-900/30 z-50">
-        <div className="flex gap-4 md:gap-8 text-center">
-          <div><p className="text-[10px] text-emerald-500 font-bold tracking-widest uppercase">Floor</p><p className="text-xl font-fancy">{gameState.level}</p></div>
-          <div><p className="text-[10px] text-amber-500 font-bold tracking-widest uppercase">Wealth</p><p className="text-xl font-fancy text-amber-400">{gameState.score}</p></div>
-          <div><p className="text-[10px] text-blue-500 font-bold tracking-widest uppercase">Time</p><p className={`text-xl font-fancy ${gameState.timeRemaining < 10 ? 'text-red-500 animate-pulse' : ''}`}>{gameState.timeRemaining}s</p></div>
+      <header className="p-4 bg-black/70 backdrop-blur-lg flex justify-between items-center border-b border-white/5 z-50 shadow-2xl">
+        <div className="flex gap-4 md:gap-10 text-center">
+          <div className="group transition-transform hover:scale-110">
+            <p className="text-[10px] text-emerald-400 font-bold tracking-[0.2em] uppercase mb-0.5">Floor</p>
+            <p className="text-xl font-fancy text-white drop-shadow-md">{gameState.level}</p>
+          </div>
+          <div className="group transition-transform hover:scale-110">
+            <p className="text-[10px] text-amber-500 font-bold tracking-[0.2em] uppercase mb-0.5">Wealth</p>
+            <p className="text-xl font-fancy text-amber-400 drop-shadow-md">{gameState.score}</p>
+          </div>
+          <div className="group transition-transform hover:scale-110">
+            <p className="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mb-0.5">Time</p>
+            <p className={`text-xl font-fancy drop-shadow-md ${gameState.timeRemaining < 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{gameState.timeRemaining}s</p>
+          </div>
         </div>
         <div className="flex gap-2">
-           <button onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : t === Theme.BRIGHT ? Theme.COLORFUL : Theme.DARK)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10">{theme === Theme.DARK ? '🕯️' : theme === Theme.BRIGHT ? '☀️' : '🌈'}</button>
-           <button onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10">{gender === Gender.BOY ? '👦' : '👧'}</button>
-           <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="px-4 py-2 bg-emerald-700 rounded-lg font-bold uppercase text-xs hover:bg-emerald-600">Menu</button>
+           <button 
+             onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : t === Theme.BRIGHT ? Theme.COLORFUL : Theme.DARK)} 
+             className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90" 
+             title="Change Theme"
+           >
+             {theme === Theme.DARK ? '🕯️' : theme === Theme.BRIGHT ? '☀️' : '🌈'}
+           </button>
+           <button 
+             onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} 
+             className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90" 
+             title="Toggle Boy/Girl"
+           >
+             {gender === Gender.BOY ? '👦' : '👧'}
+           </button>
+           <button 
+             onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} 
+             className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-black uppercase text-[10px] tracking-widest transition-all shadow-lg active:scale-95"
+           >
+             {gameState.isPaused ? 'Resume' : 'Menu'}
+           </button>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         <div className="max-w-full max-h-full flex items-center justify-center">
-          <div ref={viewportRef} className="relative rounded-2xl border-4 border-emerald-900 bg-black overflow-hidden flex-shrink-0" style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px`, transform: `scale(${window.innerWidth < 640 ? window.innerWidth / (GRID_SIZE * 45) : 1})` }}>
-             {!isDay && <div className="absolute inset-0 bg-indigo-950/40 mix-blend-multiply z-10 pointer-events-none" />}
-             {weather === Weather.RAIN && <div className="absolute inset-0 z-20 pointer-events-none opacity-20">{Array.from({length: 30}).map((_, i) => (<div key={i} className="absolute w-[2px] h-4 bg-blue-400 animate-rain" style={{ left: `${Math.random()*100}%`, top: `${Math.random()*100}%`, animationDelay: `${Math.random()}s` }} />))}</div>}
+          <div ref={viewportRef} className={`relative rounded-3xl border-4 border-emerald-900/50 bg-black overflow-hidden flex-shrink-0 transition-transform duration-500 shadow-[0_0_60px_rgba(0,0,0,0.8)]`} style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px`, transform: `scale(${window.innerWidth < 640 ? window.innerWidth / (GRID_SIZE * 46) : 1})` }}>
+             {!isDay && <div className="absolute inset-0 bg-indigo-950/50 mix-blend-multiply z-10 pointer-events-none" />}
+             
+             {/* Weather Overlays */}
+             {weather === Weather.RAIN && (
+               <div className="absolute inset-0 z-20 pointer-events-none overflow-hidden opacity-30">
+                 {Array.from({length: 40}).map((_, i) => (
+                   <div key={i} className="absolute w-[1.5px] h-6 bg-blue-300 animate-rain" style={{ left: `${Math.random()*100}%`, top: `${Math.random()*100}%`, animationDuration: `${0.3 + Math.random() * 0.4}s`, animationDelay: `${Math.random()}s` }} />
+                 ))}
+               </div>
+             )}
+             {weather === Weather.MIST && <div className="absolute inset-0 z-20 pointer-events-none bg-white/5 blur-[80px] opacity-40 animate-pulse" />}
+             
              <div className="grid dynamic-light-mask" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
                 {maze.map((row, y) => row.map((tile, x) => (
-                  <div key={`${x}-${y}`} className={`w-10 h-10 flex items-center justify-center text-2xl relative ${tile === TileType.WALL ? TILE_COLORS.WALL[theme] : TILE_COLORS.PATH[theme]}`}>
-                    {tile === TileType.COIN && <span className="animate-float">🟡</span>}
-                    {tile === TileType.POWERUP && <span className="animate-pulse-fast">⚡</span>}
-                    {tile === TileType.SCROLL && <span className="animate-bounce">📜</span>}
-                    {tile === TileType.TREASURE && <span className="drop-shadow-[0_0_10px_gold]">💎</span>}
-                    {tile === TileType.WALL && <span className="opacity-40 grayscale">🌳</span>}
-                    {playerPos.x === x && playerPos.y === y && <div className="z-30 text-3xl drop-shadow-lg relative">{gender === Gender.BOY ? '👦' : '👧'}<div className="absolute inset-[-50%] bg-amber-400/20 blur-xl animate-flicker rounded-full -z-10" /></div>}
-                    {enemies.map(e => e.pos.x === x && e.pos.y === y && <div key={e.id} className="z-20 text-3xl transform scale-x-[-1] animate-bounce">{e.type === EnemyType.SNAKE ? '🐍' : e.type === EnemyType.OWL ? '🦉' : '🦇'}</div>)}
-                    {projectiles.map(p => Math.floor(p.pos.x) === x && Math.floor(p.pos.y) === y && <div key={p.id} className="z-40 text-2xl animate-pulse">🔥</div>)}
+                  <div key={`${x}-${y}`} className={`w-10 h-10 flex items-center justify-center text-2xl relative border-[0.2px] border-white/5 ${tile === TileType.WALL ? TILE_COLORS.WALL[theme] : TILE_COLORS.PATH[theme]}`}>
+                    {tile === TileType.COIN && <span className="animate-float drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">🟡</span>}
+                    {tile === TileType.POWERUP && <span className="animate-pulse-fast drop-shadow-[0_0_8px_#fbbf24]">⚡</span>}
+                    {tile === TileType.SCROLL && <span className="animate-bounce drop-shadow-md">📜</span>}
+                    {tile === TileType.TREASURE && <span className="drop-shadow-[0_0_15px_gold] animate-pulse">💎</span>}
+                    {tile === TileType.WALL && <span className="opacity-30 grayscale blur-[0.5px]">🌳</span>}
+                    
+                    {playerPos.x === x && playerPos.y === y && (
+                      <div className="z-30 text-3xl drop-shadow-2xl relative flex items-center justify-center">
+                        {gender === Gender.BOY ? '👦' : '👧'}
+                        <div className={`absolute inset-[-60%] ${isPowerupActive ? 'bg-amber-400' : 'bg-emerald-400/30'} blur-2xl animate-flicker rounded-full -z-10`} />
+                        {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400">POWER</div>}
+                      </div>
+                    )}
+                    
+                    {enemies.map(e => e.pos.x === x && e.pos.y === y && (
+                      <div key={e.id} className="z-20 text-3xl transform scale-x-[-1] animate-bounce drop-shadow-xl">
+                        {e.type === EnemyType.SNAKE ? '🐍' : e.type === EnemyType.OWL ? '🦉' : '🦇'}
+                      </div>
+                    ))}
+                    
+                    {projectiles.map(p => Math.floor(p.pos.x) === x && Math.floor(p.pos.y) === y && (
+                      <div key={p.id} className="z-40 text-2xl animate-pulse filter drop-shadow-[0_0_10px_red]">🔥</div>
+                    ))}
                   </div>
                 )))}
              </div>
           </div>
         </div>
-        <div className="md:hidden mt-8 flex gap-10 items-center">
-           <div className="grid grid-cols-3 gap-2">
-              <div /><button onTouchStart={(e) => { e.preventDefault(); movePlayer(0,-1); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">W</button><div />
-              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(-1,0); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">A</button>
-              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(0,1); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">S</button>
-              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(1,0); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">D</button>
+        
+        {/* Mobile WASD Controls */}
+        <div className="md:hidden mt-8 flex gap-12 items-center select-none p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10">
+           <div className="grid grid-cols-3 gap-3">
+              <div />
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(0,-1); }} 
+                className="w-16 h-16 bg-emerald-800/60 active:bg-emerald-500 rounded-2xl font-black text-white text-2xl flex items-center justify-center shadow-xl border-b-4 border-emerald-950 transition-all active:translate-y-1"
+              >W</button>
+              <div />
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(-1,0); }} 
+                className="w-16 h-16 bg-emerald-800/60 active:bg-emerald-500 rounded-2xl font-black text-white text-2xl flex items-center justify-center shadow-xl border-b-4 border-emerald-950 transition-all active:translate-y-1"
+              >A</button>
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(0,1); }} 
+                className="w-16 h-16 bg-emerald-800/60 active:bg-emerald-500 rounded-2xl font-black text-white text-2xl flex items-center justify-center shadow-xl border-b-4 border-emerald-950 transition-all active:translate-y-1"
+              >S</button>
+              <button 
+                onTouchStart={(e) => { e.preventDefault(); movePlayer(1,0); }} 
+                className="w-16 h-16 bg-emerald-800/60 active:bg-emerald-500 rounded-2xl font-black text-white text-2xl flex items-center justify-center shadow-xl border-b-4 border-emerald-950 transition-all active:translate-y-1"
+              >D</button>
            </div>
-           <button onTouchStart={(e) => { e.preventDefault(); fireSpirit(); }} className="w-24 h-24 bg-red-600 rounded-full border-4 border-red-900 shadow-xl flex flex-col items-center justify-center animate-pulse hover:bg-red-500"><span className="text-3xl">🔥</span><span className="text-[10px] font-black uppercase text-white">Cast</span></button>
+           <button 
+             onTouchStart={(e) => { e.preventDefault(); fireSpirit(); }} 
+             className="w-24 h-24 bg-gradient-to-br from-red-600 to-orange-600 active:from-red-500 active:to-orange-500 rounded-full border-4 border-red-900 shadow-[0_0_30px_rgba(220,38,38,0.4)] flex flex-col items-center justify-center animate-pulse transition-transform active:scale-90"
+           >
+             <span className="text-4xl">🔥</span>
+             <span className="text-[10px] font-black uppercase text-white mt-1 tracking-tighter">Banish</span>
+           </button>
         </div>
       </main>
 
-      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-3 z-40 opacity-70 hover:opacity-100 transition-opacity">
-         <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/80 rounded-full border border-emerald-500/50 shadow-xl">{gameState.isPaused ? '▶️' : '⏸️'}</button>
-         <button onClick={resetGame} className="p-4 bg-black/80 rounded-full border border-red-500/50 shadow-xl">🔄</button>
+      {/* Persistent HUD / Controls */}
+      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-4 z-40">
+         <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-emerald-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Pause Game">{gameState.isPaused ? '▶️' : '⏸️'}</button>
+         <button onClick={resetGame} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-red-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Reset Current Floor">🔄</button>
       </div>
 
+      {/* Menus and States */}
       {(gameState.isPaused || gameState.gameOver || gameState.victory) && gameState.storyStep === 'PLAYING' && !gameState.activeLore && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
            {gameState.gameOver ? (
-             <div className="space-y-6">
-                <h2 className="text-6xl font-black text-red-600 font-fancy uppercase">Fallen Explorer</h2>
-                <button onClick={resetGame} className="px-10 py-4 bg-red-600 rounded-full font-black uppercase text-xl hover:bg-red-500">Resurrect</button>
+             <div className="space-y-8 animate-in slide-in-from-bottom-10">
+                <h2 className="text-7xl font-black text-red-600 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(220,38,38,0.6)]">Fallen</h2>
+                <div className="text-xl text-emerald-100/60 italic max-w-xs">The spirits of Zoltan reclaim another treasure hunter...</div>
+                <button onClick={resetGame} className="px-14 py-6 bg-red-600 hover:bg-red-500 text-white rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(220,38,38,0.5)] transition-all hover:scale-110 active:scale-95">Resurrect</button>
              </div>
            ) : gameState.victory ? (
-             <div className="space-y-6">
-                <h2 className="text-6xl font-black text-amber-500 font-fancy uppercase">Floor Cleared</h2>
-                <button onClick={nextLevel} className="px-10 py-4 bg-amber-500 text-black rounded-full font-black uppercase text-xl hover:bg-amber-400">Descend ➡️</button>
+             <div className="space-y-8 animate-in zoom-in-50">
+                <h2 className="text-7xl font-black text-amber-500 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]">Glorious</h2>
+                <div className="text-xl text-emerald-100/60 italic max-w-xs">You conquered Floor {gameState.level}. The deep jungle awaits.</div>
+                <button onClick={nextLevel} className="px-14 py-6 bg-amber-500 hover:bg-amber-400 text-black rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(245,158,11,0.5)] transition-all hover:scale-110 active:scale-95">Descend ➡️</button>
              </div>
            ) : (
-             <div className="space-y-10 w-full max-w-sm">
-                <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400">Zoltan Menu</h2>
+             <div className="space-y-8 w-full max-w-md bg-emerald-950/10 p-10 rounded-[40px] border border-white/5 shadow-3xl backdrop-blur-2xl">
+                <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400 tracking-tight">Abyssal Menu</h2>
                 <div className="grid gap-4">
-                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-4 bg-emerald-600 rounded-xl font-bold uppercase hover:bg-emerald-500">Continue</button>
-                  <button onClick={resetGame} className="w-full py-4 bg-red-600/50 rounded-xl font-bold uppercase hover:bg-red-600">Restart</button>
+                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">Continue Hunt</button>
+                  <button onClick={resetGame} className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95">New Expedition</button>
                 </div>
+                
                 {highScores.length > 0 && (
-                  <div className="bg-black/40 p-4 rounded-xl border border-white/5 text-left">
-                    <h3 className="text-amber-500 text-[10px] uppercase tracking-widest font-bold mb-2">Hall of Legends</h3>
-                    {highScores.map((h, i) => (
-                      <div key={i} className="flex justify-between py-1 border-b border-white/5 last:border-0 text-xs font-mono text-emerald-100/70">
-                        <span>{h.name}</span>
-                        <span className="text-amber-400">{h.score}</span>
-                      </div>
-                    ))}
+                  <div className="bg-black/50 p-6 rounded-3xl border border-white/5 text-left mt-10">
+                    <h3 className="text-amber-500 text-xs uppercase tracking-[0.3em] font-black mb-6 flex items-center justify-between">
+                       Hall of Legends
+                       <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
+                    </h3>
+                    <div className="space-y-3">
+                      {highScores.map((h, i) => (
+                        <div key={i} className="flex justify-between items-center py-2 border-b border-white/5 last:border-0">
+                          <div className="flex items-center gap-3">
+                            <span className="text-white/20 font-mono italic">#{i+1}</span>
+                            <span className="text-emerald-100/80 font-bold">{h.name}</span>
+                          </div>
+                          <span className="text-amber-400 font-mono font-black">{h.score}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
              </div>
@@ -321,16 +408,17 @@ export default function App() {
         </div>
       )}
 
-      <div className="w-full bg-black/90 border-t border-emerald-900/40 p-2 text-center mt-auto">
-         <footer className="flex flex-col sm:flex-row justify-between px-6 py-2 text-[10px] font-bold text-emerald-900/40 uppercase tracking-widest">
-            <p>(C) NOAM GOLD AI 2026</p>
-            <div className="flex gap-4 items-center">
-              <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors">goldnoamai@gmail.com</a>
-              <span>|</span>
-              <button className="hover:text-emerald-400">Send Feedback</button>
+      {/* Persistent Footer */}
+      <footer className="w-full bg-black/95 border-t border-white/5 p-4 z-50">
+         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
+            <p className="hover:text-emerald-500 transition-colors duration-500">(C) NOAM GOLD AI 2026</p>
+            <div className="flex gap-8 items-center">
+              <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors duration-300 normal-case tracking-normal">goldnoamai@gmail.com</a>
+              <span className="opacity-10">|</span>
+              <button className="hover:text-emerald-400 transition-colors duration-300">Send Feedback</button>
             </div>
-         </footer>
-      </div>
+         </div>
+      </footer>
     </div>
   );
 }
