@@ -86,9 +86,11 @@ export default function App() {
   const enemyTimerRef = useRef<any>(null);
   const projTimerRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
+  const hasSavedScoreRef = useRef(false);
 
   const initLevel = useCallback((levelNum: number, currentScore: number) => {
     const newMaze = generateMaze(GRID_SIZE);
+    hasSavedScoreRef.current = false;
     for (let i = 0; i < GRID_SIZE; i++) {
       for (let j = 0; j < GRID_SIZE; j++) {
         if (newMaze[i][j] === TileType.PATH && Math.random() < 0.1) newMaze[i][j] = TileType.COIN;
@@ -97,7 +99,7 @@ export default function App() {
       }
     }
     const newEnemies: Enemy[] = [];
-    for (let i = 0; i < Math.min(levelNum + 2, 8); i++) {
+    for (let i = 0; i < Math.min(levelNum + 2, 12); i++) {
       const pos = getRandomPathPosition(newMaze, { x: 1, y: 1 });
       newEnemies.push({ id: Math.random().toString(), type: [EnemyType.SNAKE, EnemyType.OWL, EnemyType.BAT][Math.floor(Math.random() * 3)], pos });
     }
@@ -124,6 +126,23 @@ export default function App() {
     const stored = localStorage.getItem('jungle-explorer-scores');
     if (stored) setHighScores(JSON.parse(stored));
   }, [initLevel]);
+
+  // Highscore Persistence
+  useEffect(() => {
+    if ((gameState.gameOver || (gameState.victory && gameState.storyStep === 'ENDGAME')) && !hasSavedScoreRef.current) {
+      hasSavedScoreRef.current = true;
+      const entry: HighScoreEntry = {
+        name: `Explorer ${Math.floor(Math.random() * 999)}`,
+        score: gameState.score,
+        date: new Date().toLocaleDateString()
+      };
+      setHighScores(prev => {
+        const next = [...prev, entry].sort((a, b) => b.score - a.score).slice(0, 5);
+        localStorage.setItem('jungle-explorer-scores', JSON.stringify(next));
+        return next;
+      });
+    }
+  }, [gameState.gameOver, gameState.victory, gameState.storyStep, gameState.score]);
 
   useEffect(() => {
     if (!viewportRef.current) return;
@@ -224,66 +243,79 @@ export default function App() {
           <div><p className="text-[10px] text-blue-500 font-bold tracking-widest uppercase">Time</p><p className={`text-xl font-fancy ${gameState.timeRemaining < 10 ? 'text-red-500 animate-pulse' : ''}`}>{gameState.timeRemaining}s</p></div>
         </div>
         <div className="flex gap-2">
-           <button onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : Theme.DARK)} className="p-2 bg-white/5 rounded-lg border border-white/10">{theme === Theme.DARK ? '🕯️' : '☀️'}</button>
-           <button onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} className="p-2 bg-white/5 rounded-lg border border-white/10">{gender === Gender.BOY ? '👦' : '👧'}</button>
-           <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="px-4 py-2 bg-emerald-700 rounded-lg font-bold uppercase text-xs">Menu</button>
+           <button onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : t === Theme.BRIGHT ? Theme.COLORFUL : Theme.DARK)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10">{theme === Theme.DARK ? '🕯️' : theme === Theme.BRIGHT ? '☀️' : '🌈'}</button>
+           <button onClick={() => setGender(g => g === Gender.BOY ? Gender.GIRL : Gender.BOY)} className="p-2 bg-white/5 rounded-lg border border-white/10 hover:bg-white/10">{gender === Gender.BOY ? '👦' : '👧'}</button>
+           <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="px-4 py-2 bg-emerald-700 rounded-lg font-bold uppercase text-xs hover:bg-emerald-600">Menu</button>
         </div>
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-        <div ref={viewportRef} className="relative rounded-2xl border-4 border-emerald-900 bg-black overflow-hidden" style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px` }}>
-           {!isDay && <div className="absolute inset-0 bg-indigo-950/40 mix-blend-multiply z-10 pointer-events-none" />}
-           {weather === Weather.RAIN && <div className="absolute inset-0 z-20 pointer-events-none opacity-20">{Array.from({length: 30}).map((_, i) => (<div key={i} className="absolute w-[2px] h-4 bg-blue-400 animate-rain" style={{ left: `${Math.random()*100}%`, top: `${Math.random()*100}%`, animationDelay: `${Math.random()}s` }} />))}</div>}
-           <div className="grid dynamic-light-mask" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
-              {maze.map((row, y) => row.map((tile, x) => (
-                <div key={`${x}-${y}`} className={`w-10 h-10 flex items-center justify-center text-2xl relative ${tile === TileType.WALL ? TILE_COLORS.WALL[theme] : TILE_COLORS.PATH[theme]}`}>
-                  {tile === TileType.COIN && <span className="animate-float">🟡</span>}
-                  {tile === TileType.POWERUP && <span className="animate-pulse-fast">⚡</span>}
-                  {tile === TileType.SCROLL && <span className="animate-bounce">📜</span>}
-                  {tile === TileType.TREASURE && <span className="drop-shadow-[0_0_10px_gold]">💎</span>}
-                  {tile === TileType.WALL && <span className="opacity-40 grayscale">🌳</span>}
-                  {playerPos.x === x && playerPos.y === y && <div className="z-30 text-3xl drop-shadow-lg relative">{gender === Gender.BOY ? '👦' : '👧'}<div className="absolute inset-[-50%] bg-amber-400/20 blur-xl animate-flicker rounded-full -z-10" /></div>}
-                  {enemies.map(e => e.pos.x === x && e.pos.y === y && <div key={e.id} className="z-20 text-3xl transform scale-x-[-1] animate-bounce">{e.type === EnemyType.SNAKE ? '🐍' : e.type === EnemyType.OWL ? '🦉' : '🦇'}</div>)}
-                  {projectiles.map(p => Math.floor(p.pos.x) === x && Math.floor(p.pos.y) === y && <div key={p.id} className="z-40 text-2xl animate-pulse">🔥</div>)}
-                </div>
-              )))}
-           </div>
+        <div className="max-w-full max-h-full flex items-center justify-center">
+          <div ref={viewportRef} className="relative rounded-2xl border-4 border-emerald-900 bg-black overflow-hidden flex-shrink-0" style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px`, transform: `scale(${window.innerWidth < 640 ? window.innerWidth / (GRID_SIZE * 45) : 1})` }}>
+             {!isDay && <div className="absolute inset-0 bg-indigo-950/40 mix-blend-multiply z-10 pointer-events-none" />}
+             {weather === Weather.RAIN && <div className="absolute inset-0 z-20 pointer-events-none opacity-20">{Array.from({length: 30}).map((_, i) => (<div key={i} className="absolute w-[2px] h-4 bg-blue-400 animate-rain" style={{ left: `${Math.random()*100}%`, top: `${Math.random()*100}%`, animationDelay: `${Math.random()}s` }} />))}</div>}
+             <div className="grid dynamic-light-mask" style={{ gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)` }}>
+                {maze.map((row, y) => row.map((tile, x) => (
+                  <div key={`${x}-${y}`} className={`w-10 h-10 flex items-center justify-center text-2xl relative ${tile === TileType.WALL ? TILE_COLORS.WALL[theme] : TILE_COLORS.PATH[theme]}`}>
+                    {tile === TileType.COIN && <span className="animate-float">🟡</span>}
+                    {tile === TileType.POWERUP && <span className="animate-pulse-fast">⚡</span>}
+                    {tile === TileType.SCROLL && <span className="animate-bounce">📜</span>}
+                    {tile === TileType.TREASURE && <span className="drop-shadow-[0_0_10px_gold]">💎</span>}
+                    {tile === TileType.WALL && <span className="opacity-40 grayscale">🌳</span>}
+                    {playerPos.x === x && playerPos.y === y && <div className="z-30 text-3xl drop-shadow-lg relative">{gender === Gender.BOY ? '👦' : '👧'}<div className="absolute inset-[-50%] bg-amber-400/20 blur-xl animate-flicker rounded-full -z-10" /></div>}
+                    {enemies.map(e => e.pos.x === x && e.pos.y === y && <div key={e.id} className="z-20 text-3xl transform scale-x-[-1] animate-bounce">{e.type === EnemyType.SNAKE ? '🐍' : e.type === EnemyType.OWL ? '🦉' : '🦇'}</div>)}
+                    {projectiles.map(p => Math.floor(p.pos.x) === x && Math.floor(p.pos.y) === y && <div key={p.id} className="z-40 text-2xl animate-pulse">🔥</div>)}
+                  </div>
+                )))}
+             </div>
+          </div>
         </div>
         <div className="md:hidden mt-8 flex gap-10 items-center">
            <div className="grid grid-cols-3 gap-2">
-              <div /><button onTouchStart={() => movePlayer(0,-1)} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl">W</button><div />
-              <button onTouchStart={() => movePlayer(-1,0)} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl">A</button>
-              <button onTouchStart={() => movePlayer(0,1)} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl">S</button>
-              <button onTouchStart={() => movePlayer(1,0)} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl">D</button>
+              <div /><button onTouchStart={(e) => { e.preventDefault(); movePlayer(0,-1); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">W</button><div />
+              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(-1,0); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">A</button>
+              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(0,1); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">S</button>
+              <button onTouchStart={(e) => { e.preventDefault(); movePlayer(1,0); }} className="w-14 h-14 bg-emerald-800 rounded-full font-black text-white text-xl flex items-center justify-center">D</button>
            </div>
-           <button onTouchStart={fireSpirit} className="w-24 h-24 bg-red-600 rounded-full border-4 border-red-900 shadow-xl flex flex-col items-center justify-center animate-pulse"><span className="text-3xl">🔥</span><span className="text-[10px] font-black uppercase text-white">Cast</span></button>
+           <button onTouchStart={(e) => { e.preventDefault(); fireSpirit(); }} className="w-24 h-24 bg-red-600 rounded-full border-4 border-red-900 shadow-xl flex flex-col items-center justify-center animate-pulse hover:bg-red-500"><span className="text-3xl">🔥</span><span className="text-[10px] font-black uppercase text-white">Cast</span></button>
         </div>
       </main>
 
-      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-3 z-40 opacity-70">
-         <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/80 rounded-full border border-emerald-500/50">{gameState.isPaused ? '▶️' : '⏸️'}</button>
-         <button onClick={resetGame} className="p-4 bg-black/80 rounded-full border border-red-500/50">🔄</button>
+      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-3 z-40 opacity-70 hover:opacity-100 transition-opacity">
+         <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/80 rounded-full border border-emerald-500/50 shadow-xl">{gameState.isPaused ? '▶️' : '⏸️'}</button>
+         <button onClick={resetGame} className="p-4 bg-black/80 rounded-full border border-red-500/50 shadow-xl">🔄</button>
       </div>
 
       {(gameState.isPaused || gameState.gameOver || gameState.victory) && gameState.storyStep === 'PLAYING' && !gameState.activeLore && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
            {gameState.gameOver ? (
              <div className="space-y-6">
-                <h2 className="text-6xl font-black text-red-600 font-fancy uppercase">Fallen</h2>
-                <button onClick={resetGame} className="px-10 py-4 bg-red-600 rounded-full font-black uppercase text-xl">Resurrect</button>
+                <h2 className="text-6xl font-black text-red-600 font-fancy uppercase">Fallen Explorer</h2>
+                <button onClick={resetGame} className="px-10 py-4 bg-red-600 rounded-full font-black uppercase text-xl hover:bg-red-500">Resurrect</button>
              </div>
            ) : gameState.victory ? (
              <div className="space-y-6">
                 <h2 className="text-6xl font-black text-amber-500 font-fancy uppercase">Floor Cleared</h2>
-                <button onClick={nextLevel} className="px-10 py-4 bg-amber-500 text-black rounded-full font-black uppercase text-xl">Descend ➡️</button>
+                <button onClick={nextLevel} className="px-10 py-4 bg-amber-500 text-black rounded-full font-black uppercase text-xl hover:bg-amber-400">Descend ➡️</button>
              </div>
            ) : (
              <div className="space-y-10 w-full max-w-sm">
                 <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400">Zoltan Menu</h2>
                 <div className="grid gap-4">
-                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-4 bg-emerald-600 rounded-xl font-bold uppercase">Continue</button>
-                  <button onClick={resetGame} className="w-full py-4 bg-red-600/50 rounded-xl font-bold uppercase">Restart</button>
+                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-4 bg-emerald-600 rounded-xl font-bold uppercase hover:bg-emerald-500">Continue</button>
+                  <button onClick={resetGame} className="w-full py-4 bg-red-600/50 rounded-xl font-bold uppercase hover:bg-red-600">Restart</button>
                 </div>
+                {highScores.length > 0 && (
+                  <div className="bg-black/40 p-4 rounded-xl border border-white/5 text-left">
+                    <h3 className="text-amber-500 text-[10px] uppercase tracking-widest font-bold mb-2">Hall of Legends</h3>
+                    {highScores.map((h, i) => (
+                      <div key={i} className="flex justify-between py-1 border-b border-white/5 last:border-0 text-xs font-mono text-emerald-100/70">
+                        <span>{h.name}</span>
+                        <span className="text-amber-400">{h.score}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
              </div>
            )}
         </div>
