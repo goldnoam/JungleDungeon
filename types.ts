@@ -41,6 +41,16 @@ export enum Weather {
   MIST = 'MIST'
 }
 
+export enum Language {
+  EN = 'EN',
+  HE = 'HE',
+  ZH = 'ZH',
+  HI = 'HI',
+  DE = 'DE',
+  ES = 'ES',
+  FR = 'FR'
+}
+
 export interface Enemy {
   id: string;
   type: EnemyType;
@@ -65,6 +75,7 @@ export interface GameState {
   totalCoinsInLevel: number;
   storyStep: 'INTRO' | 'PLAYING' | 'ENDGAME';
   activeLore: string | null;
+  language: Language;
 }
 
 export interface HighScoreEntry {

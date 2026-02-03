@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
-  Position, TileType, Enemy, EnemyType, Gender, CharacterClass, Theme, Weather, GameState, HighScoreEntry, Projectile 
+  Position, TileType, Enemy, EnemyType, Gender, CharacterClass, Theme, Weather, GameState, HighScoreEntry, Projectile, Language 
 } from './types';
 import { GRID_SIZE, INITIAL_TIME, THEMES, TILE_COLORS, POWERUP_DURATION } from './constants';
 import { generateMaze, getRandomPathPosition } from './utils/maze';
+import { TRANSLATIONS } from './translations';
 
 const LORE_POOL = [
   "The Jungle King once ruled these halls with a golden scepter...",
@@ -15,7 +16,7 @@ const LORE_POOL = [
 ];
 
 const getPlayerEmoji = (charClass: CharacterClass, gender: Gender) => {
-  if (charClass === CharacterClass.KNIGHT) return gender === Gender.BOY ? '🤺' : '🤺'; // Or 💂 / 💂‍♀️
+  if (charClass === CharacterClass.KNIGHT) return gender === Gender.BOY ? '🤺' : '🤺'; 
   if (charClass === CharacterClass.ROGUE) return '🥷';
   if (charClass === CharacterClass.WIZARD) return gender === Gender.BOY ? '🧙‍♂️' : '🧙‍♀️';
   return '👦';
@@ -27,9 +28,11 @@ const StoryOverlay: React.FC<{
   onClose: (data?: { gender: Gender; charClass: CharacterClass }) => void;
   currentGender?: Gender;
   currentClass?: CharacterClass;
-}> = ({ type, text, onClose, currentGender, currentClass }) => {
+  lang: Language;
+}> = ({ type, text, onClose, currentGender, currentClass, lang }) => {
   const [selectedGender, setSelectedGender] = useState<Gender>(currentGender || Gender.BOY);
   const [selectedClass, setSelectedClass] = useState<CharacterClass>(currentClass || CharacterClass.KNIGHT);
+  const t = (key: string) => TRANSLATIONS[lang][key] || key;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-6 animate-in fade-in zoom-in duration-300">
@@ -37,34 +40,34 @@ const StoryOverlay: React.FC<{
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-30" />
         {type === 'INTRO' && (
           <>
-            <h1 className="text-5xl md:text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic">The Jungle Depths</h1>
+            <h1 className="text-5xl md:text-6xl font-black font-fancy text-emerald-400 tracking-tighter uppercase italic">{t('title')}</h1>
             
             <div className="space-y-6">
               <div>
-                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">Choose Your Avatar</p>
+                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">{t('chooseAvatar')}</p>
                 <div className="flex justify-center gap-4">
                   <button 
                     onClick={() => setSelectedGender(Gender.BOY)} 
                     className={`px-6 py-3 rounded-xl border-2 transition-all ${selectedGender === Gender.BOY ? 'bg-emerald-600 border-emerald-400 scale-110 shadow-lg' : 'bg-black/40 border-emerald-900/30'}`}
                   >
-                    👦 Boy
+                    👦 {t('boy')}
                   </button>
                   <button 
                     onClick={() => setSelectedGender(Gender.GIRL)} 
                     className={`px-6 py-3 rounded-xl border-2 transition-all ${selectedGender === Gender.GIRL ? 'bg-emerald-600 border-emerald-400 scale-110 shadow-lg' : 'bg-black/40 border-emerald-900/30'}`}
                   >
-                    👧 Girl
+                    👧 {t('girl')}
                   </button>
                 </div>
               </div>
 
               <div>
-                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">Choose Your Class</p>
+                <p className="text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3">{t('chooseClass')}</p>
                 <div className="grid grid-cols-3 gap-3">
                   {[
-                    { id: CharacterClass.KNIGHT, label: 'Knight', icon: '🤺' },
-                    { id: CharacterClass.ROGUE, label: 'Rogue', icon: '🥷' },
-                    { id: CharacterClass.WIZARD, label: 'Wizard', icon: '🧙' },
+                    { id: CharacterClass.KNIGHT, label: t('knight'), icon: '🤺' },
+                    { id: CharacterClass.ROGUE, label: t('rogue'), icon: '🥷' },
+                    { id: CharacterClass.WIZARD, label: t('wizard'), icon: '🧙' },
                   ].map((cls) => (
                     <button 
                       key={cls.id}
@@ -83,24 +86,24 @@ const StoryOverlay: React.FC<{
               onClick={() => onClose({ gender: selectedGender, charClass: selectedClass })} 
               className="px-12 py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-2xl font-black transition-all hover:scale-105 shadow-lg uppercase"
             >
-              Enter the Abyss
+              {t('enterAbyss')}
             </button>
           </>
         )}
         {type === 'ENDGAME' && (
           <>
-            <h1 className="text-5xl md:text-6xl font-black font-fancy text-yellow-400 animate-pulse uppercase">Immortal Victory</h1>
+            <h1 className="text-5xl md:text-6xl font-black font-fancy text-yellow-400 animate-pulse uppercase">{t('immortalVictory')}</h1>
             <div className="space-y-4 text-xl text-yellow-100/80 italic">
-              <p>The deep jungle falls silent as you emerge with the <span className="text-amber-400 font-bold">Great Relic</span>.</p>
+              <p>{t('victoryDesc')}</p>
             </div>
-            <button onClick={() => onClose()} className="px-12 py-5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-full text-2xl font-black transition-all uppercase">New Legend</button>
+            <button onClick={() => onClose()} className="px-12 py-5 bg-yellow-500 hover:bg-yellow-400 text-black rounded-full text-2xl font-black transition-all uppercase">{t('newLegend')}</button>
           </>
         )}
         {type === 'LORE' && (
           <div className="bg-amber-50 text-amber-900 p-8 rounded-xl border-4 border-amber-800 shadow-2xl font-serif">
-            <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">Ancient Inscription</h3>
+            <h3 className="text-xl font-bold border-b-2 border-amber-800/20 pb-2 mb-4">{t('ancientInscription')}</h3>
             <p className="text-2xl italic leading-relaxed">"{text}"</p>
-            <button onClick={() => onClose()} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg transition-transform active:scale-95">Close Parchment</button>
+            <button onClick={() => onClose()} className="mt-8 px-8 py-3 bg-amber-800 text-white font-bold rounded-lg hover:bg-amber-900 shadow-lg transition-transform active:scale-95">{t('closeParchment')}</button>
           </div>
         )}
       </div>
@@ -125,7 +128,8 @@ export default function App() {
     coinsCollected: 0,
     totalCoinsInLevel: 0,
     storyStep: 'INTRO',
-    activeLore: null
+    activeLore: null,
+    language: Language.EN
   });
 
   const [gender, setGender] = useState<Gender>(Gender.BOY);
@@ -141,6 +145,8 @@ export default function App() {
   const projTimerRef = useRef<any>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const hasSavedScoreRef = useRef(false);
+
+  const t = (key: string) => TRANSLATIONS[gameState.language][key] || key;
 
   const initLevel = useCallback((levelNum: number, currentScore: number) => {
     const newMaze = generateMaze(GRID_SIZE);
@@ -290,12 +296,16 @@ export default function App() {
   const nextLevel = () => initLevel(gameState.level + 1, gameState.score);
 
   return (
-    <div className={`fixed inset-0 flex flex-col transition-all duration-700 select-none ${THEMES[theme]}`}>
+    <div 
+      className={`fixed inset-0 flex flex-col transition-all duration-700 select-none ${THEMES[theme]}`}
+      dir={gameState.language === Language.HE ? 'rtl' : 'ltr'}
+    >
       {gameState.storyStep === 'INTRO' && (
         <StoryOverlay 
           type="INTRO" 
           currentGender={gender}
           currentClass={charClass}
+          lang={gameState.language}
           onClose={(data) => {
             if (data) {
               setGender(data.gender);
@@ -305,25 +315,38 @@ export default function App() {
           }} 
         />
       )}
-      {gameState.activeLore && <StoryOverlay type="LORE" text={gameState.activeLore} onClose={() => setGameState(s => ({ ...s, activeLore: null, isPaused: false }))} />}
-      {gameState.storyStep === 'ENDGAME' && gameState.victory && <StoryOverlay type="ENDGAME" onClose={resetGame} />}
+      {gameState.activeLore && <StoryOverlay lang={gameState.language} type="LORE" text={gameState.activeLore} onClose={() => setGameState(s => ({ ...s, activeLore: null, isPaused: false }))} />}
+      {gameState.storyStep === 'ENDGAME' && gameState.victory && <StoryOverlay lang={gameState.language} type="ENDGAME" onClose={resetGame} />}
 
       <header className="p-4 bg-black/70 backdrop-blur-lg flex justify-between items-center border-b border-white/5 z-50 shadow-2xl">
         <div className="flex gap-4 md:gap-10 text-center">
           <div className="group transition-transform hover:scale-110">
-            <p className="text-[10px] text-emerald-400 font-bold tracking-[0.2em] uppercase mb-0.5">Floor</p>
+            <p className="text-[10px] text-emerald-400 font-bold tracking-[0.2em] uppercase mb-0.5">{t('floor')}</p>
             <p className="text-xl font-fancy text-white drop-shadow-md">{gameState.level}</p>
           </div>
           <div className="group transition-transform hover:scale-110">
-            <p className="text-[10px] text-amber-500 font-bold tracking-[0.2em] uppercase mb-0.5">Wealth</p>
+            <p className="text-[10px] text-amber-500 font-bold tracking-[0.2em] uppercase mb-0.5">{t('wealth')}</p>
             <p className="text-xl font-fancy text-amber-400 drop-shadow-md">{gameState.score}</p>
           </div>
           <div className="group transition-transform hover:scale-110">
-            <p className="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mb-0.5">Time</p>
+            <p className="text-[10px] text-blue-400 font-bold tracking-[0.2em] uppercase mb-0.5">{t('time')}</p>
             <p className={`text-xl font-fancy drop-shadow-md ${gameState.timeRemaining < 10 ? 'text-red-500 animate-pulse' : 'text-white'}`}>{gameState.timeRemaining}s</p>
           </div>
         </div>
         <div className="flex gap-2">
+           <select 
+             value={gameState.language}
+             onChange={(e) => setGameState(s => ({ ...s, language: e.target.value as Language }))}
+             className="bg-white/5 border border-white/10 rounded-full px-3 text-xs font-black uppercase tracking-tighter text-white hover:bg-white/20 transition-all cursor-pointer outline-none"
+           >
+             <option value={Language.EN} className="bg-slate-900">EN</option>
+             <option value={Language.HE} className="bg-slate-900">עברית</option>
+             <option value={Language.ZH} className="bg-slate-900">中文</option>
+             <option value={Language.HI} className="bg-slate-900">हिन्दी</option>
+             <option value={Language.DE} className="bg-slate-900">DE</option>
+             <option value={Language.ES} className="bg-slate-900">ES</option>
+             <option value={Language.FR} className="bg-slate-900">FR</option>
+           </select>
            <button 
              onClick={() => setTheme(t => t === Theme.DARK ? Theme.BRIGHT : t === Theme.BRIGHT ? Theme.COLORFUL : Theme.DARK)} 
              className="w-10 h-10 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 transition-all active:scale-90" 
@@ -335,7 +358,7 @@ export default function App() {
              onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} 
              className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full font-black uppercase text-[10px] tracking-widest transition-all shadow-lg active:scale-95"
            >
-             {gameState.isPaused ? 'Resume' : 'Menu'}
+             {gameState.isPaused ? t('resume') : t('menu')}
            </button>
         </div>
       </header>
@@ -368,7 +391,7 @@ export default function App() {
                       <div className="z-30 text-3xl drop-shadow-2xl relative flex items-center justify-center">
                         {getPlayerEmoji(charClass, gender)}
                         <div className={`absolute inset-[-60%] ${isPowerupActive ? 'bg-amber-400' : 'bg-emerald-400/30'} blur-2xl animate-flicker rounded-full -z-10`} />
-                        {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400">POWER</div>}
+                        {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400 whitespace-nowrap">{t('power')}</div>}
                       </div>
                     )}
                     
@@ -387,8 +410,8 @@ export default function App() {
           </div>
         </div>
         
-        {/* Mobile WASD Controls */}
-        <div className="md:hidden mt-8 flex gap-12 items-center select-none p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10">
+        {/* Mobile Controls */}
+        <div className="md:hidden mt-8 flex gap-12 items-center select-none p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10" dir="ltr">
            <div className="grid grid-cols-3 gap-3">
               <div />
               <button 
@@ -414,12 +437,12 @@ export default function App() {
              className="w-24 h-24 bg-gradient-to-br from-red-600 to-orange-600 active:from-red-500 active:to-orange-500 rounded-full border-4 border-red-900 shadow-[0_0_30px_rgba(220,38,38,0.4)] flex flex-col items-center justify-center animate-pulse transition-transform active:scale-90"
            >
              <span className="text-4xl">🔥</span>
-             <span className="text-[10px] font-black uppercase text-white mt-1 tracking-tighter">Banish</span>
+             <span className="text-[10px] font-black uppercase text-white mt-1 tracking-tighter">{t('banish')}</span>
            </button>
         </div>
       </main>
 
-      <div className="fixed bottom-32 right-6 md:right-12 flex flex-col gap-4 z-40">
+      <div className={`fixed bottom-32 z-40 flex flex-col gap-4 ${gameState.language === Language.HE ? 'left-6 md:left-12' : 'right-6 md:right-12'}`}>
          <button onClick={() => setGameState(s => ({ ...s, isPaused: !s.isPaused }))} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-emerald-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Pause Game">{gameState.isPaused ? '▶️' : '⏸️'}</button>
          <button onClick={resetGame} className="p-4 bg-black/60 hover:bg-black/90 rounded-full border border-red-500/30 shadow-2xl text-xl backdrop-blur-xl transition-all active:scale-90 flex items-center justify-center" title="Reset Current Floor">🔄</button>
       </div>
@@ -428,34 +451,34 @@ export default function App() {
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in">
            {gameState.gameOver ? (
              <div className="space-y-8 animate-in slide-in-from-bottom-10">
-                <h2 className="text-7xl font-black text-red-600 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(220,38,38,0.6)]">Fallen</h2>
-                <div className="text-xl text-emerald-100/60 italic max-w-xs">The spirits of Zoltan reclaim another treasure hunter...</div>
-                <button onClick={resetGame} className="px-14 py-6 bg-red-600 hover:bg-red-500 text-white rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(220,38,38,0.5)] transition-all hover:scale-110 active:scale-95">Resurrect</button>
+                <h2 className="text-7xl font-black text-red-600 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(220,38,38,0.6)]">{t('fallen')}</h2>
+                <div className="text-xl text-emerald-100/60 italic max-w-xs mx-auto">{t('fallenDesc')}</div>
+                <button onClick={resetGame} className="px-14 py-6 bg-red-600 hover:bg-red-500 text-white rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(220,38,38,0.5)] transition-all hover:scale-110 active:scale-95">{t('resurrect')}</button>
              </div>
            ) : gameState.victory ? (
              <div className="space-y-8 animate-in zoom-in-50">
-                <h2 className="text-7xl font-black text-amber-500 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]">Glorious</h2>
-                <div className="text-xl text-emerald-100/60 italic max-w-xs">You conquered Floor {gameState.level}. The deep jungle awaits.</div>
-                <button onClick={nextLevel} className="px-14 py-6 bg-amber-500 hover:bg-amber-400 text-black rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(245,158,11,0.5)] transition-all hover:scale-110 active:scale-95">Descend ➡️</button>
+                <h2 className="text-7xl font-black text-amber-500 font-fancy uppercase tracking-tighter drop-shadow-[0_0_20px_rgba(245,158,11,0.6)]">{t('glorious')}</h2>
+                <div className="text-xl text-emerald-100/60 italic max-w-xs mx-auto">{t('gloriousDesc').replace('{level}', gameState.level.toString())}</div>
+                <button onClick={nextLevel} className="px-14 py-6 bg-amber-500 hover:bg-amber-400 text-black rounded-full font-black uppercase text-2xl shadow-[0_10px_40px_rgba(245,158,11,0.5)] transition-all hover:scale-110 active:scale-95">{t('descend')} ➡️</button>
              </div>
            ) : (
              <div className="space-y-8 w-full max-w-md bg-emerald-950/10 p-10 rounded-[40px] border border-white/5 shadow-3xl backdrop-blur-2xl">
-                <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400 tracking-tight">Abyssal Menu</h2>
+                <h2 className="text-5xl font-black font-fancy uppercase text-emerald-400 tracking-tight">{t('abyssalMenu')}</h2>
                 <div className="grid gap-4">
-                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">Continue Hunt</button>
+                  <button onClick={() => setGameState(s => ({ ...s, isPaused: false }))} className="w-full py-5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl active:scale-95">{t('continueHunt')}</button>
                   <button 
                     onClick={() => setGameState(s => ({ ...s, storyStep: 'INTRO', isPaused: true }))} 
                     className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95"
                   >
-                    Change Character
+                    {t('changeChar')}
                   </button>
-                  <button onClick={resetGame} className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95">New Expedition</button>
+                  <button onClick={resetGame} className="w-full py-5 bg-white/5 hover:bg-white/10 rounded-2xl font-black uppercase tracking-widest transition-all border border-white/10 active:scale-95">{t('newExpedition')}</button>
                 </div>
                 
                 {highScores.length > 0 && (
-                  <div className="bg-black/50 p-6 rounded-3xl border border-white/5 text-left mt-10">
+                  <div className={`bg-black/50 p-6 rounded-3xl border border-white/5 mt-10 text-start`}>
                     <h3 className="text-amber-500 text-xs uppercase tracking-[0.3em] font-black mb-6 flex items-center justify-between">
-                       Hall of Legends
+                       {t('hallOfLegends')}
                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_10px_#10b981]"></span>
                     </h3>
                     <div className="space-y-3">
@@ -478,9 +501,9 @@ export default function App() {
 
       <footer className="w-full bg-black/95 border-t border-white/5 p-4 z-50">
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
-            <p className="hover:text-emerald-500 transition-colors duration-500">(C) NOAM GOLD AI 2026</p>
+            <p className="hover:text-emerald-500 transition-colors duration-500">{t('copyright')}</p>
             <div className="flex gap-8 items-center">
-              <span className="hover:text-emerald-400 transition-colors duration-300">Send Feedback</span>
+              <span className="hover:text-emerald-400 transition-colors duration-300">{t('sendFeedback')}</span>
               <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors duration-300 normal-case tracking-normal">goldnoamai@gmail.com</a>
             </div>
          </div>
