@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Position, TileType, Enemy, EnemyType, Gender, Theme, Weather, GameState, HighScoreEntry, Projectile 
@@ -417,9 +418,8 @@ export default function App() {
          <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-[11px] font-black text-white/20 uppercase tracking-[0.4em]">
             <p className="hover:text-emerald-500 transition-colors duration-500">(C) NOAM GOLD AI 2026</p>
             <div className="flex gap-8 items-center">
+              <span className="hover:text-emerald-400 transition-colors duration-300">Send Feedback</span>
               <a href="mailto:goldnoamai@gmail.com" className="hover:text-emerald-400 transition-colors duration-300 normal-case tracking-normal">goldnoamai@gmail.com</a>
-              <span className="opacity-10">|</span>
-              <button className="hover:text-emerald-400 transition-colors duration-300">Send Feedback</button>
             </div>
          </div>
       </footer>
