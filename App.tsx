@@ -381,7 +381,8 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Force dir="ltr" on the main game content to prevent board flipping in Hebrew */}
+      <main dir="ltr" className="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         <div className="max-w-full max-h-full flex items-center justify-center">
           <div ref={viewportRef} className={`relative rounded-3xl border-4 border-emerald-900/50 bg-black overflow-hidden flex-shrink-0 transition-transform duration-500 shadow-[0_0_60px_rgba(0,0,0,0.8)]`} style={{ width: `${GRID_SIZE * 40}px`, height: `${GRID_SIZE * 40}px`, transform: `scale(${window.innerWidth < 640 ? window.innerWidth / (GRID_SIZE * 46) : 1})` }}>
              {!isDay && <div className="absolute inset-0 bg-indigo-950/50 mix-blend-multiply z-10 pointer-events-none" />}
@@ -409,7 +410,7 @@ export default function App() {
                       <div className="z-30 text-3xl drop-shadow-2xl relative flex items-center justify-center">
                         {getPlayerEmoji(charClass, gender)}
                         <div className={`absolute inset-[-60%] ${isPowerupActive ? 'bg-amber-400' : 'bg-emerald-400/30'} blur-2xl animate-flicker rounded-full -z-10`} />
-                        {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400 whitespace-nowrap">{t('power')}</div>}
+                        {isPowerupActive && <div className="absolute -top-6 text-sm animate-bounce font-black text-amber-400 whitespace-nowrap" dir={gameState.language === Language.HE ? 'rtl' : 'ltr'}>{t('power')}</div>}
                       </div>
                     )}
                     
@@ -429,7 +430,7 @@ export default function App() {
         </div>
         
         {/* Mobile Controls */}
-        <div className="md:hidden mt-8 flex gap-12 items-center select-none p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10" dir="ltr">
+        <div className="md:hidden mt-8 flex gap-12 items-center select-none p-4 bg-white/5 rounded-3xl backdrop-blur-md border border-white/10">
            <div className="grid grid-cols-3 gap-3">
               <div />
               <button 
@@ -455,7 +456,7 @@ export default function App() {
              className="w-24 h-24 bg-gradient-to-br from-red-600 to-orange-600 active:from-red-500 active:to-orange-500 rounded-full border-4 border-red-900 shadow-[0_0_30px_rgba(220,38,38,0.4)] flex flex-col items-center justify-center animate-pulse transition-transform active:scale-90"
            >
              <span className="text-4xl">🔥</span>
-             <span className="text-[10px] font-black uppercase text-white mt-1 tracking-tighter">{t('banish')}</span>
+             <span className="text-[10px] font-black uppercase text-white mt-1 tracking-tighter" dir={gameState.language === Language.HE ? 'rtl' : 'ltr'}>{t('banish')}</span>
            </button>
         </div>
       </main>
